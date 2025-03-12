@@ -1,6 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { Search, Filter, ExternalLink } from 'lucide-react';
+import { Search, Filter, ExternalLink, Sparkles } from 'lucide-react';
 import { DorkSelector } from './components/DorkSelector';
+import { Footer } from './components/Footer';
+import { SplashScreen } from './components/SplashScreen';
 import { googleDorks } from './dorks';
 import { Message } from './types';
 import ReactMarkdown from 'react-markdown';
@@ -12,11 +14,11 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [searchUrl, setSearchUrl] = useState<string>('');
+  const [showSplash, setShowSplash] = useState(true);
 
   const generateGoogleSearchUrl = (query: string, selectedDorks: string[]): string => {
     const baseUrl = 'https://www.google.com/search?q=';
     
-    // Get selected dork operators
     const dorkOperators = selectedDorks
       .map(id => {
         const dork = googleDorks.find(d => d.id === id);
@@ -24,16 +26,12 @@ function App() {
       })
       .filter(Boolean);
 
-    // Combine query with dork operators
     const searchTerms = [
       query,
       ...dorkOperators
     ].filter(Boolean);
-
-    // Encode the search query
-    const encodedQuery = encodeURIComponent(searchTerms.join(' '));
     
-    return `${baseUrl}${encodedQuery}`;
+    return `${baseUrl}${encodeURIComponent(searchTerms.join(' '))}`;
   };
 
   const handleSearch = useCallback(async () => {
@@ -41,11 +39,9 @@ function App() {
 
     setLoading(true);
     try {
-      // Generate Google search URL with dorks
       const url = generateGoogleSearchUrl(searchQuery, selectedDorks);
       setSearchUrl(url);
       
-      // Add message about the search
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'assistant',
@@ -79,17 +75,31 @@ function App() {
     );
   };
 
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-bold text-gray-900">Google Dorks Pro</h1>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Search className="h-8 w-8 text-blue-600" />
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Google Dorks Pro
+              </h1>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Sparkles className="h-5 w-5 text-yellow-500" />
+              <span className="text-sm font-medium text-gray-600">Like Look Solutions</span>
+            </div>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Filtros */}
+      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
             <DorkSelector
               selectedDorks={selectedDorks}
@@ -97,85 +107,77 @@ function App() {
             />
           </div>
 
-          {/* Área de Busca e Resultados */}
-          <div className="lg:col-span-2">
-            {/* Campo de Busca */}
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <label htmlFor="search" className="sr-only">
-                    Buscar leads
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      id="search"
-                      className="block w-full rounded-lg border-gray-300 pr-12 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                      placeholder="Descreva seu negócio e que tipo de leads você procura..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    />
-                    <div className="absolute inset-y-0 right-0 flex py-1.5 pr-1.5">
-                      <button
-                        type="button"
-                        onClick={handleSearch}
-                        className="inline-flex items-center rounded border border-gray-200 px-2 font-sans text-sm font-medium text-gray-400 hover:border-blue-500 hover:text-blue-500"
-                      >
-                        <Search size={16} />
-                      </button>
-                    </div>
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+              <div className="space-y-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    id="search"
+                    className="block w-full rounded-xl border-gray-200 pr-12 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition-all duration-200 text-gray-900 placeholder-gray-400"
+                    placeholder="Descreva seu negócio e que tipo de leads você procura..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  />
+                  <div className="absolute inset-y-0 right-0 flex py-1.5 pr-1.5">
+                    <button
+                      type="button"
+                      onClick={handleSearch}
+                      className="inline-flex items-center rounded-lg border border-gray-200 px-4 font-medium text-gray-600 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-200"
+                    >
+                      <Search size={18} className="mr-2" />
+                      Buscar
+                    </button>
                   </div>
                 </div>
-              </div>
 
-              {/* Keywords */}
-              {keywords.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {keywords.map((keyword, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center rounded-full bg-blue-100 px-3 py-0.5 text-sm font-medium text-blue-800"
-                    >
-                      {keyword}
-                    </span>
-                  ))}
-                </div>
-              )}
+                {keywords.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {keywords.map((keyword, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10"
+                      >
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Search Preview */}
             {searchUrl && (
-              <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">
+              <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Search className="w-5 h-5 mr-2 text-blue-600" />
                   Prévia da Busca
                 </h2>
-                <div className="bg-gray-50 rounded-lg p-4 mb-4 break-all">
+                <div className="bg-gray-50 rounded-xl p-4 mb-4 break-all border border-gray-100">
                   <code className="text-sm text-gray-800">{searchUrl}</code>
                 </div>
                 <a
                   href={searchUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="inline-flex items-center px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5"
                 >
-                  <ExternalLink size={16} className="mr-2" />
+                  <ExternalLink size={18} className="mr-2" />
                   Abrir Busca no Google
                 </a>
               </div>
             )}
 
-            {/* Messages about search */}
             {messages.length > 0 && (
-              <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+              <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
                 {messages.map((message) => (
                   <div
                     key={message.id}
                     className={`mb-4 ${
-                      message.role === 'assistant' ? 'pl-4 border-l-4 border-blue-500' : ''
+                      message.role === 'assistant' ? 'pl-4 border-l-4 border-blue-500 py-2' : ''
                     }`}
                   >
-                    <ReactMarkdown className="prose">
+                    <ReactMarkdown className="prose max-w-none">
                       {message.content}
                     </ReactMarkdown>
                   </div>
@@ -183,16 +185,17 @@ function App() {
               </div>
             )}
 
-            {/* Loading State */}
             {loading && (
               <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="mt-4 text-gray-500">Preparando sua busca...</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-[3px] border-blue-600 border-t-transparent"></div>
+                <p className="mt-4 text-gray-600 font-medium">Preparando sua busca...</p>
               </div>
             )}
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
