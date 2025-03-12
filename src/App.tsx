@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, ExternalLink } from 'lucide-react';
 import { DorkSelector } from './components/DorkSelector';
 import { googleDorks } from './dorks';
 import { Message } from './types';
@@ -11,6 +11,7 @@ function App() {
   const [selectedDorks, setSelectedDorks] = useState<string[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
+  const [searchUrl, setSearchUrl] = useState<string>('');
 
   const generateGoogleSearchUrl = (query: string, selectedDorks: string[]): string => {
     const baseUrl = 'https://www.google.com/search?q=';
@@ -41,30 +42,29 @@ function App() {
     setLoading(true);
     try {
       // Generate Google search URL with dorks
-      const searchUrl = generateGoogleSearchUrl(searchQuery, selectedDorks);
+      const url = generateGoogleSearchUrl(searchQuery, selectedDorks);
+      setSearchUrl(url);
       
       // Add message about the search
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'assistant',
-        content: `🔍 Realizando busca no Google com os seguintes filtros:\n\n${
+        content: `🔍 Busca configurada com os seguintes filtros:\n\n${
           selectedDorks
             .map(id => {
               const dork = googleDorks.find(d => d.id === id);
               return `- ${dork?.description}: \`${dork?.operator}\``;
             })
             .join('\n')
-        }\n\nAbrindo resultados em uma nova aba...`
+        }`
       }]);
 
-      // Open Google search in new window
-      window.open(searchUrl, '_blank');
     } catch (error) {
       console.error('Search error:', error);
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'assistant',
-        content: '❌ Erro ao realizar a busca. Por favor, tente novamente.'
+        content: '❌ Erro ao configurar a busca. Por favor, tente novamente.'
       }]);
     } finally {
       setLoading(false);
@@ -143,6 +143,27 @@ function App() {
                 </div>
               )}
             </div>
+
+            {/* Search Preview */}
+            {searchUrl && (
+              <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 className="text-lg font-medium text-gray-900 mb-4">
+                  Prévia da Busca
+                </h2>
+                <div className="bg-gray-50 rounded-lg p-4 mb-4 break-all">
+                  <code className="text-sm text-gray-800">{searchUrl}</code>
+                </div>
+                <a
+                  href={searchUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <ExternalLink size={16} className="mr-2" />
+                  Abrir Busca no Google
+                </a>
+              </div>
+            )}
 
             {/* Messages about search */}
             {messages.length > 0 && (
