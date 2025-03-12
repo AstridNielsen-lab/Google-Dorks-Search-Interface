@@ -3,16 +3,20 @@ import { Send, Bot, User, Plus, Volume2, VolumeX } from 'lucide-react';
 import { chatWithGemini } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
 import { Message } from '../types';
+import { getUserData } from '../services/storage';
 
 interface ChatProps {
   onAddKeywords: (keywords: string[]) => void;
 }
 
 export function Chat({ onAddKeywords }: ChatProps) {
+  const userData = getUserData();
+  const firstName = userData?.name?.split(' ')[0] || 'Visitante';
+  
   const [messages, setMessages] = useState<Message[]>([{
     id: '1',
     role: 'assistant',
-    content: 'Olá! Sou Julio, seu especialista em Google Dorks. Como posso ajudar você a encontrar leads qualificados hoje?'
+    content: `Olá ${firstName}! Sou Julio, seu especialista em Google Dorks. Como posso ajudar você a encontrar leads qualificados hoje?`
   }]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -73,7 +77,7 @@ export function Chat({ onAddKeywords }: ChatProps) {
     setIsLoading(true);
     
     try {
-      const response = await chatWithGemini(userMessage);
+      const response = await chatWithGemini(`${firstName} perguntou: ${userMessage}`);
       
       const assistantMessage = {
         id: (Date.now() + 1).toString(),
@@ -88,7 +92,7 @@ export function Chat({ onAddKeywords }: ChatProps) {
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.'
+        content: `Desculpe ${firstName}, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.`
       }]);
     } finally {
       setIsLoading(false);
