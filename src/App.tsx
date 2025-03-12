@@ -1,45 +1,71 @@
 import React, { useState, useCallback } from 'react';
-import { Search, Filter, FileText } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { DorkSelector } from './components/DorkSelector';
-import { mockSearch, mockChatResponse } from './mockApi';
-import { SearchResult, Message } from './types';
+import { googleDorks } from './dorks';
+import { Message } from './types';
 import ReactMarkdown from 'react-markdown';
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedDorks, setSelectedDorks] = useState<string[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
+
+  const generateGoogleSearchUrl = (query: string, selectedDorks: string[]): string => {
+    const baseUrl = 'https://www.google.com/search?q=';
+    
+    // Get selected dork operators
+    const dorkOperators = selectedDorks
+      .map(id => {
+        const dork = googleDorks.find(d => d.id === id);
+        return dork?.operator || '';
+      })
+      .filter(Boolean);
+
+    // Combine query with dork operators
+    const searchTerms = [
+      query,
+      ...dorkOperators
+    ].filter(Boolean);
+
+    // Encode the search query
+    const encodedQuery = encodeURIComponent(searchTerms.join(' '));
+    
+    return `${baseUrl}${encodedQuery}`;
+  };
 
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) return;
 
     setLoading(true);
     try {
-      // First get chat response to extract context and keywords
-      const chatResponse = await mockChatResponse(searchQuery);
+      // Generate Google search URL with dorks
+      const searchUrl = generateGoogleSearchUrl(searchQuery, selectedDorks);
       
-      // Add assistant message
+      // Add message about the search
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'assistant',
-        content: chatResponse.response,
-        keywords: chatResponse.keywords
+        content: `🔍 Realizando busca no Google com os seguintes filtros:\n\n${
+          selectedDorks
+            .map(id => {
+              const dork = googleDorks.find(d => d.id === id);
+              return `- ${dork?.description}: \`${dork?.operator}\``;
+            })
+            .join('\n')
+        }\n\nAbrindo resultados em uma nova aba...`
       }]);
 
-      setKeywords(chatResponse.keywords);
-
-      // Then perform search with extracted keywords and context
-      const results = await mockSearch(
-        chatResponse.keywords,
-        chatResponse.businessContext,
-        selectedDorks
-      );
-      setSearchResults(results);
+      // Open Google search in new window
+      window.open(searchUrl, '_blank');
     } catch (error) {
       console.error('Search error:', error);
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: '❌ Erro ao realizar a busca. Por favor, tente novamente.'
+      }]);
     } finally {
       setLoading(false);
     }
@@ -118,7 +144,7 @@ function App() {
               )}
             </div>
 
-            {/* Chat Messages */}
+            {/* Messages about search */}
             {messages.length > 0 && (
               <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                 {messages.map((message) => (
@@ -136,76 +162,12 @@ function App() {
               </div>
             )}
 
-            {/* Resultados */}
-            {loading ? (
+            {/* Loading State */}
+            {loading && (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="mt-4 text-gray-500">Buscando leads qualificados...</p>
+                <p className="mt-4 text-gray-500">Preparando sua busca...</p>
               </div>
-            ) : (
-              searchResults.length > 0 && (
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-                  <div className="p-6 border-b border-gray-200">
-                    <h2 className="text-lg font-medium text-gray-900">
-                      Resultados da Busca
-                    </h2>
-                  </div>
-                  <ul className="divide-y divide-gray-200">
-                    {searchResults.map((result, index) => (
-                      <li key={index} className="p-6 hover:bg-gray-50">
-                        <div className="flex items-start space-x-6">
-                          {result.thumbnail && (
-                            <div className="flex-shrink-0">
-                              <img
-                                src={result.thumbnail}
-                                alt=""
-                                className="h-20 w-20 rounded-lg object-cover"
-                              />
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-base font-medium text-blue-600 hover:underline">
-                              <a href={result.url} target="_blank" rel="noopener noreferrer">
-                                {result.title}
-                              </a>
-                            </h3>
-                            <p className="mt-1 text-sm text-gray-600">{result.snippet}</p>
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              {result.emails.map((email, i) => (
-                                <span
-                                  key={i}
-                                  className="inline-flex items-center rounded-full bg-green-100 px-3 py-0.5 text-sm font-medium text-green-800"
-                                >
-                                  {email}
-                                </span>
-                              ))}
-                              {result.phones.map((phone, i) => (
-                                <span
-                                  key={i}
-                                  className="inline-flex items-center rounded-full bg-purple-100 px-3 py-0.5 text-sm font-medium text-purple-800"
-                                >
-                                  {phone}
-                                </span>
-                              ))}
-                              {result.fileType && (
-                                <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-0.5 text-sm font-medium text-gray-800">
-                                  <FileText size={14} className="mr-1" />
-                                  {result.fileType.toUpperCase()}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex-shrink-0">
-                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                              {result.relevance}% relevante
-                            </span>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )
             )}
           </div>
         </div>

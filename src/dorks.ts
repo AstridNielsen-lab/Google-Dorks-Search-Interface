@@ -4,19 +4,19 @@ export const googleDorks: GoogleDork[] = [
   {
     id: 'email',
     operator: 'intext:"@"',
-    description: 'Encontrar endereços de email',
+    description: 'Emails corporativos',
     category: 'contact'
   },
   {
     id: 'phone',
     operator: 'intext:"(11)" OR intext:"(21)" OR intext:"(31)"',
-    description: 'Encontrar números de telefone',
+    description: 'Telefones comerciais',
     category: 'contact'
   },
   {
     id: 'whatsapp',
     operator: 'intext:"whatsapp" OR intext:"WhatsApp"',
-    description: 'Encontrar contatos de WhatsApp',
+    description: 'Contatos WhatsApp',
     category: 'contact'
   },
   {
@@ -29,6 +29,18 @@ export const googleDorks: GoogleDork[] = [
     id: 'pdf',
     operator: 'filetype:pdf',
     description: 'Documentos PDF',
+    category: 'document'
+  },
+  {
+    id: 'excel',
+    operator: 'filetype:xlsx OR filetype:xls',
+    description: 'Planilhas Excel',
+    category: 'document'
+  },
+  {
+    id: 'csv',
+    operator: 'filetype:csv',
+    description: 'Arquivos CSV',
     category: 'document'
   },
   {
@@ -54,13 +66,18 @@ export const googleDorks: GoogleDork[] = [
     operator: 'site:instagram.com',
     description: 'Perfis do Instagram',
     category: 'social'
+  },
+  {
+    id: 'directory',
+    operator: 'intitle:"index of" "contacts.csv" OR "leads.xlsx"',
+    description: 'Diretórios abertos',
+    category: 'technical'
   }
 ];
 
 export const dorkCategories = {
   contact: 'Contatos',
   document: 'Documentos',
-  security: 'Segurança',
   social: 'Redes Sociais',
   technical: 'Técnico'
 };
