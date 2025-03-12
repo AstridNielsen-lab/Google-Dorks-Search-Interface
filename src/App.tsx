@@ -1,10 +1,13 @@
-import React, { useState, useCallback } from 'react';
-import { Search, Filter, ExternalLink, Sparkles } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Search, Filter, ExternalLink, Sparkles, HelpCircle } from 'lucide-react';
 import { DorkSelector } from './components/DorkSelector';
 import { Footer } from './components/Footer';
 import { SplashScreen } from './components/SplashScreen';
+import { Chat } from './components/Chat';
+import { HelpModal } from './components/HelpModal';
 import { googleDorks } from './dorks';
 import { Message } from './types';
+import { saveSearch, getSearchHistory, SearchHistory } from './services/storage';
 import ReactMarkdown from 'react-markdown';
 
 function App() {
@@ -15,6 +18,12 @@ function App() {
   const [keywords, setKeywords] = useState<string[]>([]);
   const [searchUrl, setSearchUrl] = useState<string>('');
   const [showSplash, setShowSplash] = useState(true);
+  const [showHelp, setShowHelp] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
+
+  useEffect(() => {
+    setSearchHistory(getSearchHistory());
+  }, []);
 
   const generateGoogleSearchUrl = (query: string, selectedDorks: string[]): string => {
     const baseUrl = 'https://www.google.com/search?q=';
@@ -42,6 +51,15 @@ function App() {
       const url = generateGoogleSearchUrl(searchQuery, selectedDorks);
       setSearchUrl(url);
       
+      saveSearch({
+        query: searchQuery,
+        url,
+        timestamp: Date.now(),
+        keywords,
+        dorks: selectedDorks
+      });
+      setSearchHistory(getSearchHistory());
+      
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'assistant',
@@ -65,7 +83,7 @@ function App() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedDorks]);
+  }, [searchQuery, selectedDorks, keywords]);
 
   const handleDorkToggle = (dorkId: string) => {
     setSelectedDorks(prev =>
@@ -73,6 +91,10 @@ function App() {
         ? prev.filter(id => id !== dorkId)
         : [...prev, dorkId]
     );
+  };
+
+  const handleAddKeywords = (newKeywords: string[]) => {
+    setKeywords(prev => [...new Set([...prev, ...newKeywords])]);
   };
 
   if (showSplash) {
@@ -90,24 +112,26 @@ function App() {
                 Google Dorks Pro
               </h1>
             </div>
-            <div className="flex items-center space-x-2">
-              <Sparkles className="h-5 w-5 text-yellow-500" />
-              <span className="text-sm font-medium text-gray-600">Like Look Solutions</span>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setShowHelp(true)}
+                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                title="Ajuda"
+              >
+                <HelpCircle className="w-5 h-5" />
+              </button>
+              <div className="flex items-center space-x-2">
+                <Sparkles className="h-5 w-5 text-yellow-500" />
+                <span className="text-sm font-medium text-gray-600">Like Look Solutions</span>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-1">
-            <DorkSelector
-              selectedDorks={selectedDorks}
-              onDorkToggle={handleDorkToggle}
-            />
-          </div>
-
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+          <div className="space-y-6">
             <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
               <div className="space-y-4">
                 <div className="relative">
@@ -147,6 +171,11 @@ function App() {
               </div>
             </div>
 
+            <DorkSelector
+              selectedDorks={selectedDorks}
+              onDorkToggle={handleDorkToggle}
+            />
+
             {searchUrl && (
               <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -165,6 +194,33 @@ function App() {
                   <ExternalLink size={18} className="mr-2" />
                   Abrir Busca no Google
                 </a>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-6">
+            <Chat onAddKeywords={handleAddKeywords} />
+
+            {searchHistory.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Histórico de Buscas
+                </h2>
+                <div className="space-y-4">
+                  {searchHistory.map((search, index) => (
+                    <div key={index} className="p-4 rounded-lg bg-gray-50 space-y-2">
+                      <p className="font-medium text-gray-900">{search.query}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {search.keywords.map((keyword, i) => (
+                          <span key={i} className="text-sm text-blue-600">#{keyword}</span>
+                        ))}
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {new Date(search.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -196,6 +252,7 @@ function App() {
       </main>
 
       <Footer />
+      <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
     </div>
   );
 }
