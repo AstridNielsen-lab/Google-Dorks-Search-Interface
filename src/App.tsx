@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Search, Filter, ExternalLink, Sparkles, HelpCircle, Wand2, Target } from 'lucide-react';
+import { Search, Filter, ExternalLink, Sparkles, HelpCircle, Wand2, Target, Phone, X } from 'lucide-react';
 import { DorkSelector } from './components/DorkSelector';
 import { Footer } from './components/Footer';
 import { SplashScreen } from './components/SplashScreen';
@@ -25,6 +25,7 @@ function App() {
   const [showKeywordGenerator, setShowKeywordGenerator] = useState(false);
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
   const [userData, setUserData] = useState<UserData | null>(getUserData());
+  const [showPhoneInfo, setShowPhoneInfo] = useState(false);
 
   useEffect(() => {
     setSearchHistory(getSearchHistory());
@@ -282,6 +283,83 @@ function App() {
           </div>
         </div>
       </main>
+
+      {/* Floating Phone Support Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={() => setShowPhoneInfo(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1"
+        >
+          <Phone className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Phone Support Modal */}
+      {showPhoneInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Phone className="w-6 h-6 text-blue-600" />
+                Atendimento Telefônico
+              </h2>
+              <button
+                onClick={() => setShowPhoneInfo(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="bg-blue-50 rounded-xl p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">Robôs de Atendimento AI</h3>
+                <p className="text-blue-800">
+                  Conheça nossa linha de robôs de atendimento alimentados por Inteligência Artificial, 
+                  projetados para otimizar seu atendimento ao cliente 24/7.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="bg-gray-100 rounded-lg p-2">
+                    <Sparkles className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">Atendimento Especializado</h4>
+                    <p className="text-gray-600">Nossa equipe está pronta para demonstrar como nossos robôs podem revolucionar seu atendimento.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="bg-gray-100 rounded-lg p-2">
+                    <Target className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">Demonstração Personalizada</h4>
+                    <p className="text-gray-600">Agende uma demonstração gratuita e veja nossos robôs em ação.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-6">
+                <a
+                  href="https://character.ai/chat/4vtMJ_iMDKjumbEaDrC3EkUKWQesu_Ap2kQ3Z6XX9Do"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full text-center bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Falar com um Robô Agora
+                </a>
+                
+                <p className="text-center mt-4 text-sm text-gray-500">
+                  Horário de atendimento: Segunda a Sexta, 9h às 18h
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
       <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
