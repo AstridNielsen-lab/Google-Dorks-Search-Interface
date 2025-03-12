@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Plus } from 'lucide-react';
+import { Send, Bot, User, Plus, Volume2, VolumeX } from 'lucide-react';
 import { chatWithGemini } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
 import { Message } from '../types';
@@ -12,11 +12,13 @@ export function Chat({ onAddKeywords }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([{
     id: '1',
     role: 'assistant',
-    content: 'Olá! Sou seu assistente especialista em Google Dorks. Como posso ajudar você a encontrar leads qualificados hoje?'
+    content: 'Olá! Sou Julio, seu especialista em Google Dorks. Como posso ajudar você a encontrar leads qualificados hoje?'
   }]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const speechSynthesis = window.speechSynthesis;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -25,6 +27,34 @@ export function Chat({ onAddKeywords }: ChatProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const stopSpeaking = () => {
+    speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
+  const speakMessage = (text: string) => {
+    stopSpeaking();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    
+    // Find a Portuguese voice if available
+    const voices = speechSynthesis.getVoices();
+    const ptVoice = voices.find(voice => voice.lang.includes('pt'));
+    if (ptVoice) {
+      utterance.voice = ptVoice;
+    }
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+    };
+
+    setIsSpeaking(true);
+    speechSynthesis.speak(utterance);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,11 +75,14 @@ export function Chat({ onAddKeywords }: ChatProps) {
     try {
       const response = await chatWithGemini(userMessage);
       
-      setMessages(prev => [...prev, {
+      const assistantMessage = {
         id: (Date.now() + 1).toString(),
-        role: 'assistant',
+        role: 'assistant' as const,
         content: response
-      }]);
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+      speakMessage(response);
     } catch (error) {
       console.error('Chat error:', error);
       setMessages(prev => [...prev, {
@@ -73,9 +106,22 @@ export function Chat({ onAddKeywords }: ChatProps) {
 
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col h-[600px]">
-      <div className="p-4 border-b border-gray-200 flex items-center gap-2">
-        <Bot className="w-5 h-5 text-blue-600" />
-        <h3 className="font-semibold text-gray-900">Assistente Google Dorks</h3>
+      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Bot className="w-5 h-5 text-blue-600" />
+          <h3 className="font-semibold text-gray-900">Julio - Especialista em Google Dorks</h3>
+        </div>
+        <button
+          onClick={isSpeaking ? stopSpeaking : () => speakMessage(messages[messages.length - 1]?.content || '')}
+          className={`p-2 rounded-lg transition-colors ${
+            isSpeaking 
+              ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+              : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+          }`}
+          title={isSpeaking ? "Parar leitura" : "Ler última mensagem"}
+        >
+          {isSpeaking ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">

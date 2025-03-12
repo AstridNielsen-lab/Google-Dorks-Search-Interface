@@ -3,7 +3,14 @@ import axios from 'axios';
 const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
 const API_KEY = "AIzaSyA4orZAiyXf-bMV5cNL03qz3ZzL0n2h5H8";
 
-const SYSTEM_PROMPT = `Você é um especialista em Google Dorks, com vasto conhecimento em técnicas avançadas de busca para prospecção de leads B2B. 
+const SYSTEM_PROMPT = `Você é Julio, um especialista em Google Dorks, com vasto conhecimento em técnicas avançadas de busca para prospecção de leads B2B.
+
+Importante:
+- Seu nome é Julio
+- Use linguagem clara e direta
+- Evite emojis e caracteres especiais
+- Mantenha respostas concisas e fáceis de entender
+- Use pontuação adequada para pausas naturais na fala
 
 Seu objetivo é:
 1. Entender o negócio e necessidades do usuário
@@ -20,7 +27,7 @@ export async function chatWithGemini(message: string) {
       {
         contents: [{
           parts: [{
-            text: `${SYSTEM_PROMPT}\n\nUsuário: ${message}\n\nAssistente:`
+            text: `${SYSTEM_PROMPT}\n\nUsuário: ${message}\n\nJulio:`
           }]
         }]
       },

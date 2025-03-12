@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Sparkles } from 'lucide-react';
+import { Search, Heart } from 'lucide-react';
 
 interface SplashScreenProps {
   onFinish: () => void;
@@ -21,13 +21,17 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
           <Search size={64} className="text-blue-600" />
         </div>
         <div className="absolute -top-2 -right-2">
-          <Sparkles size={24} className="text-yellow-500 animate-pulse" />
+          <Heart 
+            size={24} 
+            className="text-red-500 animate-[pulse_1s_ease-in-out_infinite]" 
+            fill="currentColor"
+          />
         </div>
       </div>
       
       <div className="mt-8 text-center">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-          Google Dorks Pro
+          Google Dorks Pro Leads
         </h1>
         <p className="text-gray-600 text-lg">
           Like Look Solutions
