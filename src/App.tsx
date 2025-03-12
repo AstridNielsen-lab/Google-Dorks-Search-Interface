@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, History, Trash2, Loader2, AlertCircle, Send, MessageSquare, Phone, Mail, ExternalLink, Heart } from 'lucide-react';
+import { Search, History, Trash2, Loader2, AlertCircle, Send, MessageSquare, Phone, Mail, ExternalLink, Heart, Star } from 'lucide-react';
 import { SearchResult, SearchHistory, Message, ChatState } from './types';
 import { mockSearch, mockChatResponse } from './mockApi';
 import { formatPhoneNumber, generateUniqueId } from './utils';
@@ -249,56 +249,80 @@ function App() {
               )}
 
               {results.length > 0 && (
-                <div className="grid gap-6">
-                  {results.map((result, index) => (
-                    <article
-                      key={index}
-                      className="bg-white rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow"
-                    >
-                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                        {result.title}
-                      </h3>
-                      <a
-                        href={result.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 text-sm mb-4 flex items-center gap-1"
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <Search className="w-6 h-6" />
+                    Resultados da Busca
+                  </h2>
+                  <div className="grid gap-6">
+                    {results.map((result, index) => (
+                      <article
+                        key={index}
+                        className="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
                       >
-                        <ExternalLink className="h-4 w-4" />
-                        {result.url}
-                      </a>
-                      <p className="text-gray-600 mb-4">{result.snippet}</p>
-                      <div className="space-y-2">
-                        {result.phones.map((phone, idx) => (
-                          <a
-                            key={idx}
-                            href={`https://wa.me/${formatPhoneNumber(phone)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-2 rounded-lg hover:bg-green-100 transition-colors"
-                          >
-                            <Phone className="h-4 w-4" />
-                            {phone}
-                          </a>
-                        ))}
-                        {result.emails.map((email, idx) => (
-                          <a
-                            key={idx}
-                            href={`mailto:${email}`}
-                            className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors"
-                          >
-                            <Mail className="h-4 w-4" />
-                            {email}
-                          </a>
-                        ))}
-                      </div>
-                      {result.relevance && (
-                        <div className="mt-4 text-sm text-gray-500">
-                          Relevância: {result.relevance} pontos
+                        <div className="flex">
+                          {result.thumbnail && (
+                            <div className="w-32 h-32 flex-shrink-0">
+                              <img
+                                src={result.thumbnail}
+                                alt={result.title}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1 p-6">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                  {result.title}
+                                </h3>
+                                <a
+                                  href={result.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:text-blue-800 text-sm mb-4 flex items-center gap-1"
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                  {result.url}
+                                </a>
+                              </div>
+                              {result.relevance && (
+                                <div className="flex items-center gap-1 bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full">
+                                  <Star className="h-4 w-4 fill-current" />
+                                  <span className="text-sm font-medium">{result.relevance}%</span>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-gray-600 mb-4">{result.snippet}</p>
+                            <div className="grid grid-cols-2 gap-3">
+                              {result.phones.map((phone, idx) => (
+                                <a
+                                  key={idx}
+                                  href={`https://wa.me/${formatPhoneNumber(phone)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-2 rounded-lg hover:bg-green-100 transition-colors"
+                                >
+                                  <Phone className="h-4 w-4" />
+                                  {phone}
+                                </a>
+                              ))}
+                              {result.emails.map((email, idx) => (
+                                <a
+                                  key={idx}
+                                  href={`mailto:${email}`}
+                                  className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors"
+                                >
+                                  <Mail className="h-4 w-4" />
+                                  {email}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
                         </div>
-                      )}
-                    </article>
-                  ))}
+                      </article>
+                    ))}
+                  </div>
                 </div>
               )}
             </main>

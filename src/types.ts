@@ -5,6 +5,7 @@ export interface SearchResult {
   phones: string[];
   emails: string[];
   relevance?: number;
+  thumbnail?: string;
 }
 
 export interface SearchHistory {

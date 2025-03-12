@@ -1,41 +1,43 @@
 import { SearchResult } from './types';
 
-// Mock data para simular resultados de busca
+// Mock data for search results since we can't use the actual Google API
 const mockResults: SearchResult[] = [
   {
-    title: "Tech Solutions Ltda",
-    url: "https://techsolutions.com.br",
-    snippet: "Empresa especializada em soluções de software e consultoria em TI. Entre em contato para um orçamento.",
-    phones: ["(11) 99999-8888", "(11) 3333-4444"],
-    emails: ["contato@techsolutions.com.br"],
-    relevance: 8
+    title: "Empresa de Software ABC",
+    url: "https://example.com/abc",
+    snippet: "Desenvolvemos soluções personalizadas para empresas. Entre em contato conosco para uma demonstração gratuita.",
+    phones: ["(11) 98765-4321", "(11) 3456-7890"],
+    emails: ["contato@abc.com", "vendas@abc.com"],
+    relevance: 95,
+    thumbnail: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=120&h=120&fit=crop"
   },
   {
-    title: "Construtora Inovação",
-    url: "https://construtorainovacao.com.br",
-    snippet: "Construção civil e reformas comerciais. Solicite um orçamento pelo WhatsApp.",
-    phones: ["(11) 98888-7777"],
-    emails: ["orcamento@construtorainovacao.com.br"],
-    relevance: 7
+    title: "XYZ Tecnologia",
+    url: "https://example.com/xyz",
+    snippet: "Especialistas em desenvolvimento de software e consultoria em TI. Atendemos em todo o Brasil.",
+    phones: ["(21) 98888-7777"],
+    emails: ["contato@xyz.com"],
+    relevance: 88,
+    thumbnail: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=120&h=120&fit=crop"
   },
   {
-    title: "Clínica Saúde Total",
-    url: "https://clinicasaudetotal.com.br",
-    snippet: "Atendimento médico especializado. Agende sua consulta online ou por WhatsApp.",
-    phones: ["(11) 97777-6666", "(11) 2222-3333"],
-    emails: ["agendamento@clinicasaudetotal.com.br"],
-    relevance: 6
+    title: "Tech Solutions Brasil",
+    url: "https://example.com/tech",
+    snippet: "Soluções em tecnologia para pequenas e médias empresas. Suporte 24/7.",
+    phones: ["(11) 97777-8888", "(11) 2222-3333"],
+    emails: ["suporte@tech.com.br", "comercial@tech.com.br"],
+    relevance: 85,
+    thumbnail: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=120&h=120&fit=crop"
   }
 ];
 
 // Lista de palavras-chave por setor
 const industryKeywords = {
-  tecnologia: ['software', 'hardware', 'tecnologia', 'ti', 'computador', 'sistema', 'app', 'aplicativo', 'digital', 'internet'],
-  saude: ['saúde', 'médico', 'hospital', 'clínica', 'consultório', 'tratamento', 'exame', 'diagnóstico'],
-  construcao: ['construção', 'obra', 'reforma', 'material', 'engenharia', 'arquitetura', 'projeto'],
-  educacao: ['escola', 'curso', 'educação', 'ensino', 'professor', 'aula', 'treinamento', 'capacitação'],
-  varejo: ['loja', 'comércio', 'venda', 'produto', 'atacado', 'varejo', 'distribuidor', 'revenda'],
-  servicos: ['serviço', 'consultoria', 'assessoria', 'manutenção', 'suporte', 'assistência'],
+  tecnologia: ['software', 'hardware', 'tecnologia', 'ti', 'computador', 'sistema', 'app', 'aplicativo', 'digital', 'internet', 'cloud', 'nuvem', 'erp', 'crm'],
+  marketing: ['marketing', 'publicidade', 'propaganda', 'mídia', 'social', 'leads', 'vendas', 'tráfego', 'conversão', 'seo'],
+  consultoria: ['consultoria', 'assessoria', 'gestão', 'processos', 'estratégia', 'negócios', 'planejamento'],
+  treinamento: ['treinamento', 'curso', 'capacitação', 'desenvolvimento', 'coaching', 'mentoria', 'workshop'],
+  servicos: ['serviço', 'outsourcing', 'terceirização', 'manutenção', 'suporte', 'assistência'],
 };
 
 function identifyIndustry(message: string): string[] {
@@ -59,19 +61,15 @@ function extractBusinessContext(message: string): {
 } {
   const text = message.toLowerCase();
   
-  // Identificar tipo de negócio
   const type = text.includes('produto') && text.includes('serviço') ? 'ambos' :
                text.includes('produto') ? 'produto' :
                text.includes('serviço') ? 'servico' : 'ambos';
                
-  // Identificar segmento
   const segment = identifyIndustry(message);
   
-  // Identificar localização
   const locations = text.match(/(?:em|para|na|no|região de)\s+([a-zà-ú\s]+?)(?:\s+|$)/i);
   const location = locations ? locations[1].trim() : '';
   
-  // Identificar faixa de preço
   const priceMatch = text.match(/(?:R\$\s*|\s)(\d+(?:\.\d{3})*(?:,\d{2})?)/g);
   const priceRange = priceMatch ? priceMatch.join(' - ') : '';
   
@@ -79,15 +77,22 @@ function extractBusinessContext(message: string): {
 }
 
 export async function mockSearch(keywords: string[], businessContext: string): Promise<SearchResult[]> {
-  // Simular delay da rede
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
   
-  // Filtrar resultados baseado nas palavras-chave
-  const context = extractBusinessContext(businessContext);
-  const filteredResults = mockResults.filter(result => {
-    const resultText = `${result.title} ${result.snippet}`.toLowerCase();
-    return keywords.some(keyword => resultText.includes(keyword.toLowerCase())) ||
-           context.segment.some(segment => resultText.includes(segment));
+  // Filter and sort results based on keywords
+  const filteredResults = mockResults.map(result => {
+    const matchScore = keywords.reduce((score, keyword) => {
+      const lowerKeyword = keyword.toLowerCase();
+      const matchInTitle = result.title.toLowerCase().includes(lowerKeyword) ? 2 : 0;
+      const matchInSnippet = result.snippet.toLowerCase().includes(lowerKeyword) ? 1 : 0;
+      return score + matchInTitle + matchInSnippet;
+    }, 0);
+
+    return {
+      ...result,
+      relevance: Math.min(100, (result.relevance || 80) + matchScore * 5)
+    };
   });
 
   return filteredResults.sort((a, b) => (b.relevance || 0) - (a.relevance || 0));
@@ -98,13 +103,11 @@ export async function mockChatResponse(message: string): Promise<{
   keywords: string[];
   businessContext: string;
 }> {
-  // Simular delay da rede
   await new Promise(resolve => setTimeout(resolve, 800));
   
   const context = extractBusinessContext(message);
   let response = '';
   
-  // Construir resposta baseada no contexto
   if (!context.type || context.type === 'ambos') {
     response += 'Para ajudar melhor, preciso saber: você está buscando clientes para produtos ou serviços?\n\n';
   }
@@ -121,7 +124,6 @@ export async function mockChatResponse(message: string): Promise<{
     response += 'Pode me contar mais sobre seu setor de atuação?\n\n';
   }
   
-  // Adicionar sugestões baseadas no que já foi identificado
   if (context.segment.length > 0) {
     response += `Identificei que você atua no setor de ${context.segment.join(', ')}.\n`;
     response += 'Vou usar técnicas avançadas de busca para encontrar:\n\n';
@@ -131,13 +133,11 @@ export async function mockChatResponse(message: string): Promise<{
     response += '✓ Perfis de potenciais compradores qualificados\n\n';
   }
 
-  // Extrair palavras-chave relevantes
   const tokens = message.toLowerCase().split(/\s+/);
   const keywords = tokens
     .filter(word => word.length > 3)
     .filter(word => !['como', 'para', 'que', 'com', 'dos', 'das', 'por'].includes(word));
 
-  // Adicionar palavras-chave do setor
   context.segment.forEach(industry => {
     keywords.push(...(industryKeywords[industry as keyof typeof industryKeywords] || []));
   });
