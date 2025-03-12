@@ -1,5 +1,5 @@
 import React from 'react';
-import { Github, Twitter, Heart } from 'lucide-react';
+import { Github, Facebook, Heart } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -17,7 +17,7 @@ export function Footer() {
           
           <div className="flex items-center space-x-6">
             <a
-              href="https://github.com/juliomachado"
+              href="https://github.com/AstridNielsen-lab"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2"
@@ -26,13 +26,13 @@ export function Footer() {
               <span className="text-sm">GitHub</span>
             </a>
             <a
-              href="https://twitter.com/juliomachado"
+              href="https://www.facebook.com/likelooksolutions"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2"
             >
-              <Twitter size={20} />
-              <span className="text-sm">Twitter</span>
+              <Facebook size={20} />
+              <span className="text-sm">Facebook</span>
             </a>
           </div>
         </div>
