@@ -6,6 +6,7 @@ export interface SearchResult {
   emails: string[];
   relevance?: number;
   thumbnail?: string;
+  fileType?: string; // Added to support different file types in results
 }
 
 export interface SearchHistory {
@@ -25,4 +26,12 @@ export interface ChatState {
   messages: Message[];
   selectedKeywords: string[];
   businessContext?: string;
+  selectedDorks: string[];
+}
+
+export interface GoogleDork {
+  id: string;
+  operator: string;
+  description: string;
+  category: 'contact' | 'document' | 'security' | 'social' | 'technical';
 }
