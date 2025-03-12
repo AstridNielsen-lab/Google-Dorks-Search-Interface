@@ -1,3 +1,5 @@
+import { SearchResult } from './types';
+
 export interface SearchResult {
   title: string;
   url: string;
@@ -7,6 +9,12 @@ export interface SearchResult {
   relevance?: number;
   thumbnail?: string;
   fileType?: string;
+  location?: {
+    state?: string;
+    city?: string;
+    postalCode?: string;
+  };
+  domain?: string;
 }
 
 export interface SearchHistory {
@@ -33,7 +41,7 @@ export interface GoogleDork {
   id: string;
   operator: string;
   description: string;
-  category: 'contact' | 'document' | 'security' | 'social' | 'technical';
+  category: 'location' | 'contact' | 'document' | 'domain' | 'social' | 'technical';
 }
 
 export interface UserData {
@@ -53,4 +61,11 @@ export interface UserData {
     screenResolution: string;
     timezone: string;
   };
+}
+
+export interface SmartSearch {
+  id: string;
+  name: string;
+  description: string;
+  dorks: string[];
 }
