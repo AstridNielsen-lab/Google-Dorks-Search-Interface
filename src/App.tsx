@@ -4,6 +4,7 @@ import { DorkSelector } from './components/DorkSelector';
 import { Footer } from './components/Footer';
 import { SplashScreen } from './components/SplashScreen';
 import { Chat } from './components/Chat';
+import { ChatHistory } from './components/ChatHistory';
 import { HelpModal } from './components/HelpModal';
 import { KeywordGeneratorModal } from './components/KeywordGeneratorModal';
 import { UserRegistration } from './components/UserRegistration';
@@ -105,6 +106,10 @@ function App() {
 
   const handleAddKeywords = (newKeywords: string[]) => {
     setKeywords(prev => [...new Set([...prev, ...newKeywords])]);
+  };
+
+  const handleSelectMessage = (content: string) => {
+    setSearchQuery(content);
   };
 
   if (!userData) {
@@ -223,6 +228,11 @@ function App() {
 
           <div className="space-y-6">
             <Chat onAddKeywords={handleAddKeywords} />
+            
+            <ChatHistory 
+              messages={messages}
+              onSelectMessage={handleSelectMessage}
+            />
 
             {searchHistory.length > 0 && (
               <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">

@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Plus, Volume2, VolumeX } from 'lucide-react';
 import { chatWithGemini } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
-import { Message } from '../types';
+import { Message, VoiceSettings } from '../types';
 import { getUserData } from '../services/storage';
+import { VoiceSettingsPanel } from './VoiceSettings';
 
 interface ChatProps {
   onAddKeywords: (keywords: string[]) => void;
@@ -16,11 +17,20 @@ export function Chat({ onAddKeywords }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([{
     id: '1',
     role: 'assistant',
-    content: `Olá ${firstName}! Sou Julio, seu especialista em Google Dorks. Como posso ajudar você a encontrar leads qualificados hoje?`
+    content: `Ola ${firstName}! Sou Julio, seu especialista em Google Dorks. Como posso ajudar voce a encontrar leads qualificados hoje?`
   }]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>({
+    gender: 'male',
+    language: 'pt-BR',
+    style: 'casual',
+    rate: 1,
+    pitch: 1
+  });
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const speechSynthesis = window.speechSynthesis;
 
@@ -41,15 +51,19 @@ export function Chat({ onAddKeywords }: ChatProps) {
     stopSpeaking();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'pt-BR';
-    utterance.rate = 1;
-    utterance.pitch = 1;
+    utterance.lang = voiceSettings.language;
+    utterance.rate = voiceSettings.rate;
+    utterance.pitch = voiceSettings.pitch;
     
-    // Find a Portuguese voice if available
     const voices = speechSynthesis.getVoices();
-    const ptVoice = voices.find(voice => voice.lang.includes('pt'));
-    if (ptVoice) {
-      utterance.voice = ptVoice;
+    const preferredVoice = voices.find(voice => 
+      voice.lang.includes(voiceSettings.language) && 
+      ((voiceSettings.gender === 'male' && !voice.name.toLowerCase().includes('female')) ||
+       (voiceSettings.gender === 'female' && voice.name.toLowerCase().includes('female')))
+    );
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
     }
 
     utterance.onend = () => {
@@ -115,18 +129,34 @@ export function Chat({ onAddKeywords }: ChatProps) {
           <Bot className="w-5 h-5 text-blue-600" />
           <h3 className="font-semibold text-gray-900">Julio - Especialista em Google Dorks</h3>
         </div>
-        <button
-          onClick={isSpeaking ? stopSpeaking : () => speakMessage(messages[messages.length - 1]?.content || '')}
-          className={`p-2 rounded-lg transition-colors ${
-            isSpeaking 
-              ? 'bg-red-100 text-red-600 hover:bg-red-200' 
-              : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-          }`}
-          title={isSpeaking ? "Parar leitura" : "Ler última mensagem"}
-        >
-          {isSpeaking ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowVoiceSettings(!showVoiceSettings)}
+            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+            title="Configuracoes de voz"
+          >
+            <Volume2 className="w-5 h-5" />
+          </button>
+          {isSpeaking && (
+            <button
+              onClick={stopSpeaking}
+              className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+              title="Parar leitura"
+            >
+              <VolumeX className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </div>
+
+      {showVoiceSettings && (
+        <div className="p-4 border-b border-gray-200">
+          <VoiceSettingsPanel
+            settings={voiceSettings}
+            onSettingsChange={setVoiceSettings}
+          />
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
@@ -188,7 +218,7 @@ export function Chat({ onAddKeywords }: ChatProps) {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Descreva seu negócio e que tipo de leads você procura..."
+            placeholder="Descreva seu negocio e que tipo de leads voce procura..."
             className="w-full rounded-xl border-gray-200 pr-12 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
             disabled={isLoading}
           />

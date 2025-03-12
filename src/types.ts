@@ -69,3 +69,11 @@ export interface SmartSearch {
   description: string;
   dorks: string[];
 }
+
+export interface VoiceSettings {
+  gender: 'male' | 'female';
+  language: 'pt-BR' | 'en-US';
+  style: 'casual' | 'formal' | 'legal';
+  rate: number;
+  pitch: number;
+}
