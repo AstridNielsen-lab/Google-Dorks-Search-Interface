@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
-const API_KEY = "AIzaSyA4orZAiyXf-bMV5cNL03qz3ZzL0n2h5H8";
+const API_KEY = "AIzaSyCelRvc6IiaudkjseTMXD_2NY7Ss6RD9wk";
 
 const SYSTEM_PROMPT = `Você é Julio, um especialista em Google Dorks, com vasto conhecimento em técnicas avançadas de busca para prospecção de leads B2B.
 
