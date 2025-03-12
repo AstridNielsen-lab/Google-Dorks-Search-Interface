@@ -1,10 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Search, Filter, ExternalLink, Sparkles, HelpCircle, Wand2 } from 'lucide-react';
+import { Search, Filter, ExternalLink, Sparkles, HelpCircle, Wand2, Target } from 'lucide-react';
 import { DorkSelector } from './components/DorkSelector';
 import { Footer } from './components/Footer';
 import { SplashScreen } from './components/SplashScreen';
 import { Chat } from './components/Chat';
-import { ChatHistory } from './components/ChatHistory';
 import { HelpModal } from './components/HelpModal';
 import { KeywordGeneratorModal } from './components/KeywordGeneratorModal';
 import { UserRegistration } from './components/UserRegistration';
@@ -108,10 +107,6 @@ function App() {
     setKeywords(prev => [...new Set([...prev, ...newKeywords])]);
   };
 
-  const handleSelectMessage = (content: string) => {
-    setSearchQuery(content);
-  };
-
   if (!userData) {
     return <UserRegistration onComplete={handleUserRegistration} />;
   }
@@ -134,6 +129,15 @@ function App() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
+              <a
+                href="https://ads.google.com/aw/campaigns/new/express"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+              >
+                <Target className="w-5 h-5 mr-2" />
+                Nova Campanha no Google Ads
+              </a>
               <button
                 onClick={() => setShowKeywordGenerator(true)}
                 className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
@@ -228,11 +232,6 @@ function App() {
 
           <div className="space-y-6">
             <Chat onAddKeywords={handleAddKeywords} />
-            
-            <ChatHistory 
-              messages={messages}
-              onSelectMessage={handleSelectMessage}
-            />
 
             {searchHistory.length > 0 && (
               <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
