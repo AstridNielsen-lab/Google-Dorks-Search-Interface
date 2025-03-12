@@ -7,6 +7,7 @@ export interface SearchHistory {
 }
 
 const STORAGE_KEY = 'google-dorks-history';
+const USER_DATA_KEY = 'google-dorks-user';
 
 export function saveSearch(search: SearchHistory): void {
   const history = getSearchHistory();
@@ -26,4 +27,18 @@ export function getSearchHistory(): SearchHistory[] {
 
 export function clearSearchHistory(): void {
   localStorage.removeItem(STORAGE_KEY);
+}
+
+export function saveUserData(userData: any): void {
+  localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+}
+
+export function getUserData(): any | null {
+  const stored = localStorage.getItem(USER_DATA_KEY);
+  if (!stored) return null;
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return null;
+  }
 }

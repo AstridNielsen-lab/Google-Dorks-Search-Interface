@@ -1,13 +1,16 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Search, Filter, ExternalLink, Sparkles, HelpCircle } from 'lucide-react';
+import { Search, Filter, ExternalLink, Sparkles, HelpCircle, Wand2 } from 'lucide-react';
 import { DorkSelector } from './components/DorkSelector';
 import { Footer } from './components/Footer';
 import { SplashScreen } from './components/SplashScreen';
 import { Chat } from './components/Chat';
 import { HelpModal } from './components/HelpModal';
+import { KeywordGeneratorModal } from './components/KeywordGeneratorModal';
+import { UserRegistration } from './components/UserRegistration';
+import { UserInfo } from './components/UserInfo';
 import { googleDorks } from './dorks';
-import { Message } from './types';
-import { saveSearch, getSearchHistory, SearchHistory } from './services/storage';
+import { Message, UserData } from './types';
+import { saveSearch, getSearchHistory, SearchHistory, getUserData, saveUserData } from './services/storage';
 import ReactMarkdown from 'react-markdown';
 
 function App() {
@@ -19,11 +22,18 @@ function App() {
   const [searchUrl, setSearchUrl] = useState<string>('');
   const [showSplash, setShowSplash] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
+  const [showKeywordGenerator, setShowKeywordGenerator] = useState(false);
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
+  const [userData, setUserData] = useState<UserData | null>(getUserData());
 
   useEffect(() => {
     setSearchHistory(getSearchHistory());
   }, []);
+
+  const handleUserRegistration = (data: UserData) => {
+    setUserData(data);
+    saveUserData(data);
+  };
 
   const generateGoogleSearchUrl = (query: string, selectedDorks: string[]): string => {
     const baseUrl = 'https://www.google.com/search?q=';
@@ -63,7 +73,7 @@ function App() {
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'assistant',
-        content: `🔍 Busca configurada com os seguintes filtros:\n\n${
+        content: `Busca configurada com os seguintes filtros:\n\n${
           selectedDorks
             .map(id => {
               const dork = googleDorks.find(d => d.id === id);
@@ -78,7 +88,7 @@ function App() {
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'assistant',
-        content: '❌ Erro ao configurar a busca. Por favor, tente novamente.'
+        content: 'Erro ao configurar a busca. Por favor, tente novamente.'
       }]);
     } finally {
       setLoading(false);
@@ -97,12 +107,18 @@ function App() {
     setKeywords(prev => [...new Set([...prev, ...newKeywords])]);
   };
 
+  if (!userData) {
+    return <UserRegistration onComplete={handleUserRegistration} />;
+  }
+
   if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
+      <UserInfo userData={userData} />
+      
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
@@ -113,6 +129,13 @@ function App() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setShowKeywordGenerator(true)}
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              >
+                <Wand2 className="w-5 h-5 mr-2" />
+                Gerador de Palavras-chave
+              </button>
               <button
                 onClick={() => setShowHelp(true)}
                 className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
@@ -253,6 +276,11 @@ function App() {
 
       <Footer />
       <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
+      <KeywordGeneratorModal
+        isOpen={showKeywordGenerator}
+        onClose={() => setShowKeywordGenerator(false)}
+        onAddKeywords={handleAddKeywords}
+      />
     </div>
   );
 }
