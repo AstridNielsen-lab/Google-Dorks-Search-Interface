@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Search, Filter, ExternalLink, Sparkles, HelpCircle, Wand2, Target, Phone, X } from 'lucide-react';
+import { Search, Filter, ExternalLink, Sparkles, HelpCircle, Wand2, Target, Phone, X, Facebook } from 'lucide-react';
 import { DorkSelector } from './components/DorkSelector';
 import { Footer } from './components/Footer';
 import { SplashScreen } from './components/SplashScreen';
@@ -146,9 +146,18 @@ function App() {
                 <Target className="w-5 h-5 mr-2" />
                 <span className="hidden sm:inline">Google Ads</span>
               </a>
+              <a
+                href="https://www.facebook.com/business/tools/ads-manager"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              >
+                <Facebook className="w-5 h-5 mr-2" />
+                <span className="hidden sm:inline">Facebook Ads</span>
+              </a>
               <button
                 onClick={() => setShowKeywordGenerator(true)}
-                className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors"
               >
                 <Wand2 className="w-5 h-5 mr-2" />
                 <span className="hidden sm:inline">Palavras-chave</span>
