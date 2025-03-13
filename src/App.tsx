@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Search, Filter, ExternalLink, Sparkles, HelpCircle, Wand2, Target, Phone, X, Facebook } from 'lucide-react';
+import { Search, Filter, ExternalLink, Sparkles, HelpCircle, Wand2, Target, Phone, X, Facebook, Scale } from 'lucide-react';
 import { DorkSelector } from './components/DorkSelector';
 import { Footer } from './components/Footer';
 import { SplashScreen } from './components/SplashScreen';
@@ -8,6 +8,7 @@ import { HelpModal } from './components/HelpModal';
 import { KeywordGeneratorModal } from './components/KeywordGeneratorModal';
 import { UserRegistration } from './components/UserRegistration';
 import { UserInfo } from './components/UserInfo';
+import { CopyrightModal } from './components/CopyrightModal';
 import { googleDorks } from './dorks';
 import { Message, UserData } from './types';
 import { saveSearch, getSearchHistory, SearchHistory, getUserData, saveUserData } from './services/storage';
@@ -26,6 +27,7 @@ function App() {
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
   const [userData, setUserData] = useState<UserData | null>(getUserData());
   const [showPhoneInfo, setShowPhoneInfo] = useState(false);
+  const [showCopyright, setShowCopyright] = useState(false);
 
   useEffect(() => {
     setSearchHistory(getSearchHistory());
@@ -161,6 +163,13 @@ function App() {
               >
                 <Wand2 className="w-5 h-5 mr-2" />
                 <span className="hidden sm:inline">Palavras-chave</span>
+              </button>
+              <button
+                onClick={() => setShowCopyright(true)}
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors"
+              >
+                <Scale className="w-5 h-5 mr-2" />
+                <span className="hidden sm:inline">Direitos Autorais</span>
               </button>
               <button
                 onClick={() => setShowHelp(true)}
@@ -373,6 +382,10 @@ function App() {
         isOpen={showKeywordGenerator}
         onClose={() => setShowKeywordGenerator(false)}
         onAddKeywords={handleAddKeywords}
+      />
+      <CopyrightModal
+        isOpen={showCopyright}
+        onClose={() => setShowCopyright(false)}
       />
     </div>
   );
