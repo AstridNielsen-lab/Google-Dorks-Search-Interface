@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { LogIn, Mail, Phone } from 'lucide-react';
+import { LogIn, Mail } from 'lucide-react';
 import { UserData } from '../types';
-import { getUserData } from '../services/storage';
 import { checkSubscription } from '../services/mercadopago';
 
 interface LoginFormProps {
@@ -9,10 +8,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onComplete }: LoginFormProps) {
-  const [formData, setFormData] = useState({
-    email: '',
-    whatsapp: ''
-  });
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,26 +19,33 @@ export function LoginForm({ onComplete }: LoginFormProps) {
 
     try {
       // Check if user has an active subscription
-      const isSubscribed = await checkSubscription(formData.email);
+      const isSubscribed = await checkSubscription(email);
       
       if (!isSubscribed) {
-        setError('Assinatura não encontrada. Por favor, verifique seus dados ou faça uma nova assinatura.');
+        setError('Assinatura não encontrada. Por favor, faça uma nova assinatura.');
         return;
       }
 
-      // Get stored user data
-      const userData = getUserData();
-      
-      if (!userData || userData.email !== formData.email || userData.whatsapp !== formData.whatsapp) {
-        setError('Email ou WhatsApp incorretos. Por favor, verifique seus dados.');
-        return;
-      }
+      // Create basic user data with just email
+      const userData: UserData = {
+        email,
+        name: email.split('@')[0], // Use email username as display name
+        whatsapp: '', // No longer required
+        browser: {
+          userAgent: navigator.userAgent,
+          language: navigator.language,
+          platform: navigator.platform,
+          vendor: navigator.vendor,
+          screenResolution: `${window.screen.width}x${window.screen.height}`,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        }
+      };
 
       // Login successful
       onComplete(userData);
     } catch (error) {
       console.error('Login error:', error);
-      setError('Ocorreu um erro ao fazer login. Por favor, tente novamente.');
+      setError('Ocorreu um erro ao verificar sua assinatura. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -72,7 +75,7 @@ export function LoginForm({ onComplete }: LoginFormProps) {
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4" />
-                  <span>Email</span>
+                  <span>Email da sua assinatura</span>
                 </div>
               </label>
               <input
@@ -80,28 +83,10 @@ export function LoginForm({ onComplete }: LoginFormProps) {
                 id="email"
                 required
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700 mb-1">
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  <span>WhatsApp (sua senha)</span>
-                </div>
-              </label>
-              <input
-                type="tel"
-                id="whatsapp"
-                required
-                placeholder="(11) 99999-9999"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={formData.whatsapp}
-                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                disabled={loading}
+                placeholder="Insira o email usado na assinatura"
               />
             </div>
 
@@ -113,7 +98,7 @@ export function LoginForm({ onComplete }: LoginFormProps) {
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                  <span>Verificando...</span>
+                  <span>Verificando assinatura...</span>
                 </>
               ) : (
                 <>
@@ -125,7 +110,7 @@ export function LoginForm({ onComplete }: LoginFormProps) {
           </form>
 
           <p className="mt-6 text-sm text-gray-500 text-center">
-            Use seu email e número de WhatsApp cadastrado para acessar
+            Use o email cadastrado na sua assinatura do Mercado Pago
           </p>
         </div>
       </div>

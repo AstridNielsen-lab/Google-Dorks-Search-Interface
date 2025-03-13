@@ -1,5 +1,3 @@
-import { SearchResult } from './types';
-
 export interface SearchResult {
   title: string;
   url: string;
@@ -47,7 +45,7 @@ export interface GoogleDork {
 export interface UserData {
   name: string;
   email: string;
-  whatsapp: string;
+  whatsapp?: string; // Made optional
   location?: {
     latitude: number;
     longitude: number;
