@@ -140,6 +140,93 @@ export const googleDorks: GoogleDork[] = [
   }
 ];
 
+export const databaseDorks = [
+  {
+    id: 'edu-database',
+    operator: 'site:.edu filetype:xls "root" database',
+    description: 'Educational Database Files',
+    author: 'defaltredmode',
+    date: '2024-07-04'
+  },
+  {
+    id: 'test-database-logs',
+    operator: '"START test_database" ext:log',
+    description: 'Database Test Logs',
+    author: 'Nadir Boulacheb (RubX)',
+    date: '2024-05-13'
+  },
+  {
+    id: 'database-properties',
+    operator: 'intitle:"index of" database.properties',
+    description: 'Database Properties Files',
+    author: 'Odela Rohith',
+    date: '2024-01-23'
+  },
+  {
+    id: 'database-json',
+    operator: 'inurl:"/database.json"',
+    description: 'Database JSON Files',
+    author: 'Raouf',
+    date: '2023-11-07'
+  },
+  {
+    id: 'databases-directory',
+    operator: 'intitle:"Index of /databases"',
+    description: 'Database Directories',
+    author: 'Sayed Recover',
+    date: '2023-11-01'
+  },
+  {
+    id: 'joomla-database',
+    operator: 'inurl: /libraries/joomla/database/',
+    description: 'Joomla Database Files',
+    author: 'Mark Ivan David',
+    date: '2023-05-08'
+  },
+  {
+    id: 'database-sql',
+    operator: 'intitle:"index of" "database.sql"',
+    description: 'SQL Database Files',
+    author: 'Prathamesh Pawar',
+    date: '2023-03-14'
+  },
+  {
+    id: 'database-migrations',
+    operator: 'intitle:"index of /database/migrations"',
+    description: 'Database Migration Files',
+    author: 'Shuvrosayar Das',
+    date: '2023-01-31'
+  },
+  {
+    id: 'database-backup-sql',
+    operator: 'intitle:"database" "backup" filetype:sql',
+    description: 'Database Backup Files',
+    author: 'Onkar Deshmukh',
+    date: '2021-11-08'
+  },
+  {
+    id: 'database-sql-files',
+    operator: 'Intitle:database ext:sql',
+    description: 'SQL Database Files',
+    author: 'Veeresh Appasaheb Patil',
+    date: '2021-11-05'
+  },
+  {
+    id: 'database-py',
+    operator: 'intitle:"index of" "database.py"',
+    description: 'Python Database Files',
+    author: 'J. Igor Melo',
+    date: '2021-09-22'
+  },
+  {
+    id: 'phpmyadmin-databases',
+    operator: 'site:*/phpmyadmin/server_databases.php',
+    description: 'phpMyAdmin Database Pages',
+    author: 'Reza Abasi',
+    date: '2021-06-11'
+  }
+];
+
 export const dorkCategories = {
   location: 'Localização',
   contact: 'Contatos',

@@ -13,6 +13,7 @@ import { googleDorks } from './dorks';
 import { Message, UserData } from './types';
 import { saveSearch, getSearchHistory, SearchHistory, getUserData, saveUserData } from './services/storage';
 import ReactMarkdown from 'react-markdown';
+import { DatabaseDorks } from './components/DatabaseDorks';
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -312,7 +313,10 @@ function App() {
         </div>
       </main>
 
-      {/* Phone Support Modal */}
+      <section className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <DatabaseDorks />
+      </section>
+
       {showPhoneInfo && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
