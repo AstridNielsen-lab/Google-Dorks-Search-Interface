@@ -3,6 +3,7 @@ import { Mail, Send, CreditCard } from 'lucide-react';
 import { UserData } from '../types';
 import { saveUserData } from '../services/storage';
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
+import { checkSubscription } from '../services/mercadopago';
 
 // Initialize Mercado Pago
 initMercadoPago('APP_USR-66b8867d-6e7c-4b57-a441-167840b07da1');
@@ -19,12 +20,40 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
   });
   const [showPayment, setShowPayment] = useState(false);
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
     
-    // Create preference ID for payment
     try {
+      // Check if user already has an active subscription
+      const isSubscribed = await checkSubscription(formData.email);
+      
+      if (isSubscribed) {
+        // If already subscribed, complete registration
+        const userData: UserData = {
+          name: formData.name,
+          email: formData.email,
+          whatsapp: formData.whatsapp,
+          browser: {
+            userAgent: navigator.userAgent,
+            language: navigator.language,
+            platform: navigator.platform,
+            vendor: navigator.vendor,
+            screenResolution: `${window.screen.width}x${window.screen.height}`,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          }
+        };
+        
+        saveUserData(userData);
+        onComplete(userData);
+        return;
+      }
+
+      // Create preference ID for payment
       const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
         method: 'POST',
         headers: {
@@ -42,55 +71,48 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
             email: formData.email,
             name: formData.name
           },
+          external_reference: formData.email,
           back_urls: {
             success: window.location.href,
             failure: window.location.href,
             pending: window.location.href
           },
-          auto_return: "approved"
+          auto_return: "approved",
+          notification_url: "https://your-webhook-endpoint.com/notifications" // Add your webhook endpoint here
         })
       });
+
+      if (!response.ok) {
+        throw new Error('Erro ao criar preferência de pagamento');
+      }
 
       const data = await response.json();
       setPreferenceId(data.id);
       setShowPayment(true);
-    } catch (error) {
-      console.error('Error creating payment preference:', error);
-    }
-    
-    // Preparar o corpo do email
-    const emailBody = `
-Nome: ${formData.name}
-Email: ${formData.email}
-WhatsApp: ${formData.whatsapp}
-    `;
-    
-    // Criar o link mailto
-    const mailtoLink = `mailto:juliocamposmachado@gmail.com?subject=Novo Registro de Usuário&body=${encodeURIComponent(emailBody)}`;
-    
-    // Criar objeto de usuário
-    const userData: UserData = {
-      name: formData.name,
-      email: formData.email,
-      whatsapp: formData.whatsapp,
-      browser: {
-        userAgent: navigator.userAgent,
-        language: navigator.language,
-        platform: navigator.platform,
-        vendor: navigator.vendor,
-        screenResolution: `${window.screen.width}x${window.screen.height}`,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      }
-    };
 
-    // Salvar dados do usuário
-    saveUserData(userData);
-    
-    // Abrir o cliente de email
-    window.location.href = mailtoLink;
-    
-    // Completar o registro
-    onComplete(userData);
+      // Save user data immediately
+      const userData: UserData = {
+        name: formData.name,
+        email: formData.email,
+        whatsapp: formData.whatsapp,
+        browser: {
+          userAgent: navigator.userAgent,
+          language: navigator.language,
+          platform: navigator.platform,
+          vendor: navigator.vendor,
+          screenResolution: `${window.screen.width}x${window.screen.height}`,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        }
+      };
+      
+      saveUserData(userData);
+      
+    } catch (error) {
+      console.error('Error in registration:', error);
+      setError('Ocorreu um erro ao processar seu cadastro. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -106,6 +128,12 @@ WhatsApp: ${formData.whatsapp}
             </h1>
           </div>
 
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -118,6 +146,7 @@ WhatsApp: ${formData.whatsapp}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                disabled={loading}
               />
             </div>
 
@@ -132,6 +161,7 @@ WhatsApp: ${formData.whatsapp}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                disabled={loading}
               />
             </div>
 
@@ -147,6 +177,7 @@ WhatsApp: ${formData.whatsapp}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={formData.whatsapp}
                 onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                disabled={loading}
               />
             </div>
 
@@ -173,10 +204,20 @@ WhatsApp: ${formData.whatsapp}
             ) : (
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading}
               >
-                <Send className="w-5 h-5" />
-                Cadastrar e Assinar
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    <span>Processando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    <span>Cadastrar e Assinar</span>
+                  </>
+                )}
               </button>
             )}
           </form>

@@ -11,7 +11,8 @@ import { UserInfo } from './components/UserInfo';
 import { CopyrightModal } from './components/CopyrightModal';
 import { googleDorks } from './dorks';
 import { Message, UserData } from './types';
-import { saveSearch, getSearchHistory, SearchHistory, getUserData, saveUserData } from './services/storage';
+import { saveSearch, getSearchHistory, SearchHistory, getUserData } from './services/storage';
+import { checkSubscription } from './services/mercadopago';
 import ReactMarkdown from 'react-markdown';
 import { DatabaseDorks } from './components/DatabaseDorks';
 
@@ -29,14 +30,32 @@ function App() {
   const [userData, setUserData] = useState<UserData | null>(getUserData());
   const [showPhoneInfo, setShowPhoneInfo] = useState(false);
   const [showCopyright, setShowCopyright] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [checkingSubscription, setCheckingSubscription] = useState(true);
+
+  useEffect(() => {
+    const checkUserSubscription = async () => {
+      if (userData?.email) {
+        const subscribed = await checkSubscription(userData.email);
+        setIsSubscribed(subscribed);
+      }
+      setCheckingSubscription(false);
+    };
+
+    checkUserSubscription();
+  }, [userData]);
 
   useEffect(() => {
     setSearchHistory(getSearchHistory());
   }, []);
 
-  const handleUserRegistration = (data: UserData) => {
+  const handleUserRegistration = async (data: UserData) => {
     setUserData(data);
     saveUserData(data);
+    
+    // Check subscription after registration
+    const subscribed = await checkSubscription(data.email);
+    setIsSubscribed(subscribed);
   };
 
   const generateGoogleSearchUrl = (query: string, selectedDorks: string[]): string => {
@@ -111,7 +130,18 @@ function App() {
     setKeywords(prev => [...new Set([...prev, ...newKeywords])]);
   };
 
-  if (!userData) {
+  if (checkingSubscription) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-[3px] border-blue-600 border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-gray-600">Verificando assinatura...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userData || !isSubscribed) {
     return <UserRegistration onComplete={handleUserRegistration} />;
   }
 
@@ -121,7 +151,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
-      <UserInfo userData={userData} />
+      <UserInfo userData={userData} isSubscribed={isSubscribed} />
       
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
