@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Send, CreditCard, LogIn } from 'lucide-react';
 import { UserData } from '../types';
 import { saveUserData } from '../services/storage';
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
-import { checkSubscription } from '../services/mercadopago';
+import { checkSubscription, createPaymentPreference } from '../services/mercadopago';
 import { LoginForm } from './LoginForm';
 
-// Initialize Mercado Pago
-initMercadoPago('APP_USR-66b8867d-6e7c-4b7c-a441-167840b07da1');
+// Initialize Mercado Pago with public key
+initMercadoPago('APP_USR-66b8867d-6e7c-4b57-a441-167840b07da1', {
+  locale: 'pt-BR'
+});
 
 interface UserRegistrationProps {
   onComplete: (userData: UserData) => void;
@@ -23,6 +25,8 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim()) return;
+
     setLoading(true);
     setError(null);
     
@@ -35,47 +39,13 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
         return;
       }
 
-      // Create preference ID for payment
-      const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer APP_USR-2120017613674163-031300-fa2a42e0f08ec6db55f7bc4385024ba5-29008060',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          items: [{
-            title: "Assinatura Google Dorks Pro",
-            quantity: 1,
-            currency_id: "BRL",
-            unit_price: 2.99
-          }],
-          payer: {
-            email: email
-          },
-          external_reference: email,
-          back_urls: {
-            success: `${window.location.origin}?login=true`,
-            failure: window.location.href,
-            pending: window.location.href
-          },
-          auto_return: "approved",
-          notification_url: "https://your-webhook-endpoint.com/notifications"
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao criar preferência de pagamento');
-      }
-
-      const data = await response.json();
-      setPreferenceId(data.id);
-      setShowPayment(true);
-
+      // Create payment preference
+      const newPreferenceId = await createPaymentPreference(email);
+      
       // Save basic user data
       const userData: UserData = {
         email,
-        name: email.split('@')[0], // Use email username as display name
-        whatsapp: '', // No longer required
+        name: email.split('@')[0],
         browser: {
           userAgent: navigator.userAgent,
           language: navigator.language,
@@ -88,19 +58,43 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
       
       saveUserData(userData);
       
+      // Set preference ID and show payment after everything is ready
+      setPreferenceId(newPreferenceId);
+      setShowPayment(true);
+      
     } catch (error) {
       console.error('Error in registration:', error);
       setError('Ocorreu um erro ao processar seu cadastro. Por favor, tente novamente.');
+      setShowPayment(false);
+      setPreferenceId(null);
     } finally {
       setLoading(false);
     }
   };
 
+  // Reset payment state when unmounting
+  useEffect(() => {
+    return () => {
+      setShowPayment(false);
+      setPreferenceId(null);
+    };
+  }, []);
+
   // Check URL parameters for login redirect
-  React.useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('login') === 'true') {
       setShowLogin(true);
+    }
+    if (params.get('error') === 'payment_failed') {
+      setError('O pagamento não foi concluído. Por favor, tente novamente.');
+      setShowPayment(false);
+      setPreferenceId(null);
+    }
+    if (params.get('status') === 'pending') {
+      setError('Pagamento pendente. Assim que confirmado, você poderá fazer login.');
+      setShowPayment(false);
+      setPreferenceId(null);
     }
   }, []);
 
@@ -142,6 +136,7 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
+                    placeholder="Seu melhor email"
                   />
                 </div>
 
@@ -165,13 +160,21 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
 
             {showPayment && preferenceId ? (
               <div className="w-full">
-                <Wallet initialization={{ preferenceId }} />
+                <Wallet 
+                  initialization={{ preferenceId }}
+                  onError={(error) => {
+                    console.error('Mercado Pago error:', error);
+                    setError('Erro ao carregar o pagamento. Por favor, tente novamente.');
+                    setShowPayment(false);
+                    setPreferenceId(null);
+                  }}
+                />
               </div>
             ) : (
               <button
                 type="submit"
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={loading}
+                disabled={loading || !email.trim()}
               >
                 {loading ? (
                   <>
@@ -197,6 +200,10 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
               <span>Já sou assinante</span>
             </button>
           )}
+
+          <p className="mt-6 text-sm text-gray-500 text-center">
+            Pagamento processado com segurança pelo Mercado Pago
+          </p>
         </div>
       </div>
     </div>
