@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Search, Filter, ExternalLink, Sparkles, HelpCircle, Wand2, Target, Phone, X, Facebook, Scale } from 'lucide-react';
+import { Search, Filter, ExternalLink, Sparkles, HelpCircle, Wand2, Target, Phone, X, Facebook, Scale, Database } from 'lucide-react';
 import { DorkSelector } from './components/DorkSelector';
 import { Footer } from './components/Footer';
 import { SplashScreen } from './components/SplashScreen';
@@ -165,6 +165,15 @@ function App() {
                 <Facebook className="w-5 h-5 mr-2" />
                 <span>Facebook Ads</span>
               </a>
+              <a
+                href="https://www.exploit-db.com/google-hacking-database"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+              >
+                <Database className="w-5 h-5 mr-2" />
+                <span>GHDB - OSINT</span>
+              </a>
               <button
                 onClick={() => setShowKeywordGenerator(true)}
                 className="inline-flex items-center px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors"
@@ -253,7 +262,7 @@ function App() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5"
                 >
-                  <ExternalLink size={18} className="mr-2" />
+                  <ExternalLink className="w-4 h-4 mr-2" />
                   Abrir Busca no Google
                 </a>
               </div>
