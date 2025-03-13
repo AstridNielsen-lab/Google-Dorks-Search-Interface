@@ -122,14 +122,21 @@ function App() {
       
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
             <div className="flex items-center space-x-3">
               <Search className="h-8 w-8 text-blue-600" />
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Google Dorks Pro
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => setShowPhoneInfo(true)}
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
+              >
+                <Phone className="w-5 h-5 mr-2" />
+                <span className="hidden sm:inline">Falar com Robô</span>
+              </button>
               <a
                 href="https://ads.google.com/aw/campaigns/new/express"
                 target="_blank"
@@ -137,14 +144,14 @@ function App() {
                 className="inline-flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
               >
                 <Target className="w-5 h-5 mr-2" />
-                Nova Campanha no Google Ads
+                <span className="hidden sm:inline">Google Ads</span>
               </a>
               <button
                 onClick={() => setShowKeywordGenerator(true)}
                 className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
               >
                 <Wand2 className="w-5 h-5 mr-2" />
-                Gerador de Palavras-chave
+                <span className="hidden sm:inline">Palavras-chave</span>
               </button>
               <button
                 onClick={() => setShowHelp(true)}
@@ -283,16 +290,6 @@ function App() {
           </div>
         </div>
       </main>
-
-      {/* Floating Phone Support Button */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={() => setShowPhoneInfo(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1"
-        >
-          <Phone className="w-6 h-6" />
-        </button>
-      </div>
 
       {/* Phone Support Modal */}
       {showPhoneInfo && (
