@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Mail, Send, CreditCard } from 'lucide-react';
+import { Mail, Send, CreditCard, LogIn } from 'lucide-react';
 import { UserData } from '../types';
 import { saveUserData } from '../services/storage';
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
 import { checkSubscription } from '../services/mercadopago';
+import { LoginForm } from '../components/LoginForm';
 
 // Initialize Mercado Pago
-initMercadoPago('APP_USR-66b8867d-6e7c-4b57-a441-167840b07da1');
+initMercadoPago('APP_USR-66b8867d-6e7c-4b7c-a441-167840b07da1');
 
 interface UserRegistrationProps {
   onComplete: (userData: UserData) => void;
@@ -19,6 +20,7 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
     whatsapp: ''
   });
   const [showPayment, setShowPayment] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,23 +35,7 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
       const isSubscribed = await checkSubscription(formData.email);
       
       if (isSubscribed) {
-        // If already subscribed, complete registration
-        const userData: UserData = {
-          name: formData.name,
-          email: formData.email,
-          whatsapp: formData.whatsapp,
-          browser: {
-            userAgent: navigator.userAgent,
-            language: navigator.language,
-            platform: navigator.platform,
-            vendor: navigator.vendor,
-            screenResolution: `${window.screen.width}x${window.screen.height}`,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-          }
-        };
-        
-        saveUserData(userData);
-        onComplete(userData);
+        setShowLogin(true);
         return;
       }
 
@@ -65,7 +51,7 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
             title: "Assinatura Google Dorks Pro",
             quantity: 1,
             currency_id: "BRL",
-            unit_price: 9.99
+            unit_price: 2.99  // Updated price to R$ 2,99
           }],
           payer: {
             email: formData.email,
@@ -73,12 +59,12 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
           },
           external_reference: formData.email,
           back_urls: {
-            success: window.location.href,
+            success: `${window.location.origin}?login=true`,
             failure: window.location.href,
             pending: window.location.href
           },
           auto_return: "approved",
-          notification_url: "https://your-webhook-endpoint.com/notifications" // Add your webhook endpoint here
+          notification_url: "https://your-webhook-endpoint.com/notifications"
         })
       });
 
@@ -108,12 +94,24 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
       saveUserData(userData);
       
     } catch (error) {
-      console.error('Error in registration:', error);
+      console.error('Error in registration:', error instanceof Error ? error.message : 'Unknown error');
       setError('Ocorreu um erro ao processar seu cadastro. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
   };
+
+  // Check URL parameters for login redirect
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('login') === 'true') {
+      setShowLogin(true);
+    }
+  }, []);
+
+  if (showLogin) {
+    return <LoginForm onComplete={onComplete} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-4">
@@ -121,10 +119,10 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-blue-50 rounded-lg">
-              <Mail className="w-6 h-6 text-blue-600" />
+              {showPayment ? <CreditCard className="w-6 h-6 text-blue-600" /> : <Mail className="w-6 h-6 text-blue-600" />}
             </div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Cadastro de Usuário
+              {showPayment ? 'Pagamento' : 'Cadastro de Usuário'}
             </h1>
           </div>
 
@@ -135,67 +133,71 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Nome Completo
-              </label>
-              <input
-                type="text"
-                id="name"
-                required
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                disabled={loading}
-              />
-            </div>
+            {!showPayment && (
+              <>
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                    Nome Completo
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    required
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    disabled={loading}
+                  />
+                </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                required
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                disabled={loading}
-              />
-            </div>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    required
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    disabled={loading}
+                  />
+                </div>
 
-            <div>
-              <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700 mb-1">
-                WhatsApp
-              </label>
-              <input
-                type="tel"
-                id="whatsapp"
-                required
-                placeholder="(11) 99999-9999"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={formData.whatsapp}
-                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                disabled={loading}
-              />
-            </div>
+                <div>
+                  <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700 mb-1">
+                    WhatsApp
+                  </label>
+                  <input
+                    type="tel"
+                    id="whatsapp"
+                    required
+                    placeholder="(11) 99999-9999"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formData.whatsapp}
+                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                    disabled={loading}
+                  />
+                </div>
 
-            <div className="bg-blue-50 rounded-xl p-4">
-              <div className="flex items-center gap-3 mb-2">
-                <CreditCard className="w-5 h-5 text-blue-600" />
-                <h3 className="font-semibold text-blue-900">Assinatura Premium</h3>
-              </div>
-              <p className="text-blue-800 mb-3">
-                Acesso completo a todas as funcionalidades por apenas R$ 9,99/mês
-              </p>
-              <ul className="text-sm text-blue-700 space-y-1">
-                <li>✓ Acesso ilimitado aos filtros avançados</li>
-                <li>✓ Gerador de palavras-chave premium</li>
-                <li>✓ Suporte prioritário</li>
-                <li>✓ Atualizações exclusivas</li>
-              </ul>
-            </div>
+                <div className="bg-blue-50 rounded-xl p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <CreditCard className="w-5 h-5 text-blue-600" />
+                    <h3 className="font-semibold text-blue-900">Assinatura Premium</h3>
+                  </div>
+                  <p className="text-blue-800 mb-3">
+                    Acesso completo a todas as funcionalidades por apenas R$ 2,99/mês
+                  </p>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>✓ Acesso ilimitado aos filtros avançados</li>
+                    <li>✓ Gerador de palavras-chave premium</li>
+                    <li>✓ Suporte prioritário</li>
+                    <li>✓ Atualizações exclusivas</li>
+                  </ul>
+                </div>
+              </>
+            )}
 
             {showPayment && preferenceId ? (
               <div className="w-full">
@@ -221,6 +223,16 @@ export function UserRegistration({ onComplete }: UserRegistrationProps) {
               </button>
             )}
           </form>
+
+          {!showPayment && (
+            <button
+              onClick={() => setShowLogin(true)}
+              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              <LogIn className="w-5 h-5" />
+              <span>Já sou assinante</span>
+            </button>
+          )}
 
           <p className="mt-6 text-sm text-gray-500 text-center">
             Seus dados serão usados para personalizar sua experiência

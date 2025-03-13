@@ -10,28 +10,31 @@ export async function checkSubscription(email: string): Promise<boolean> {
         'Authorization': `Bearer ${ACCESS_TOKEN}`
       },
       params: {
-        sort: 'date_created:desc',
+        sort: 'date_created',
         criteria: 'desc',
         external_reference: email,
-        status: 'approved'
+        status: 'approved',
+        limit: 1,
+        offset: 0
       }
     });
 
-    if (!response.data.results.length) {
+    // Check if we have any results
+    const results = response.data.results || [];
+    
+    if (results.length === 0) {
       return false;
     }
 
-    // Check the most recent payment
-    const latestPayment = response.data.results[0];
-    
-    // Check if payment was made within the last 30 days
-    const paymentDate = new Date(latestPayment.date_created);
+    // Get the latest payment
+    const latestPayment = results[0];
+    const paymentDate = new Date(latestPayment.date_created || '');
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     return paymentDate > thirtyDaysAgo;
   } catch (error) {
-    console.error('Error checking subscription:', error);
+    console.error('Error checking subscription:', error instanceof Error ? error.message : 'Unknown error');
     return false;
   }
 }
