@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Phone, Calendar, Clock, X, MessageSquare, AlertTriangle, Stethoscope, Scissors, Heart, Shield, UserCog, ShoppingCart, CreditCard, Mic, MicOff } from 'lucide-react';
+import { Phone, Calendar, Clock, X, MessageSquare, AlertTriangle, Stethoscope, Scissors, Heart, Shield, UserCog, ShoppingCart, CreditCard, Mic, MicOff, PhoneCall } from 'lucide-react';
 import { format, addDays, setHours, setMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getSchedulingRecommendations, chatWithGemini } from '../services/gemini';
@@ -251,9 +251,21 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
     if (contactMethod === 'call') {
       window.location.href = `tel:+55${cleanNumber}`;
     } else {
-      const message = `Olá! Seu agendamento para ${service?.name} em ${format(selectedDate, 'dd/MM/yyyy')} às ${selectedTime} foi confirmado.`;
+      const message = `Olá! Gostaria de atendimento para ${service?.name}.`;
       window.location.href = `https://wa.me/55${cleanNumber}?text=${encodeURIComponent(message)}`;
     }
+  };
+
+  const handleImmediateContact = () => {
+    if (!phoneNumber || !selectedService) {
+      setError('Por favor, preencha o telefone para contato.');
+      return;
+    }
+
+    initiateContact();
+    setTimeout(() => {
+      onClose();
+    }, 1000);
   };
 
   const handleSchedule = async () => {
@@ -514,6 +526,24 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                     />
                   </div>
 
+                  {/* Immediate Contact Button */}
+                  <button
+                    onClick={handleImmediateContact}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    <PhoneCall className="w-5 h-5" />
+                    <span>Contatar Imediatamente</span>
+                  </button>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white text-gray-500">ou</span>
+                    </div>
+                  </div>
+
                   {/* Date Selection */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
@@ -574,7 +604,7 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                     </div>
                   )}
 
-                  {/* Submit Button */}
+                  {/* Schedule Button */}
                   <button
                     onClick={handleSchedule}
                     disabled={!selectedDate || !selectedTime || !phoneNumber || loading}
@@ -587,12 +617,8 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                       </>
                     ) : (
                       <>
-                        {contactMethod === 'call' ? (
-                          <Phone className="w-5 h-5" />
-                        ) : (
-                          <MessageSquare className="w-5 h-5" />
-                        )}
-                        <span>Confirmar Agendamento</span>
+                        <Calendar className="w-5 h-5" />
+                        <span>Agendar Atendimento</span>
                       </>
                     )}
                   </button>
@@ -605,5 +631,3 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
     </div>
   );
 }
-
-export { ScheduleCall }
