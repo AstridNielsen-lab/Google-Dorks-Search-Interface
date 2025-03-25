@@ -169,6 +169,29 @@ function App() {
               </div>
             </div>
 
+{/* Botão "Agendar Atendimento" adicionado abaixo */}
+
+            <div className="flex flex-wrap items-center gap-3 pb-2">
+              <button
+                onClick={() => setShowScheduleCall(true)}
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
+              >
+                <Phone className="w-5 h-5 mr-2" />
+                <span>Agendar Atendimento</span>
+              </button>
+              <a
+                href="https://ads.google.com/aw/campaigns/new/express"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+              >
+                <Target className="w-5 h-5 mr-2" />
+                <span>Google Ads</span>
+              </a>
+
+
+              {/* Novo botão adicionado aqui final do meu codigo */}
+
             <div className="flex flex-wrap items-center gap-3 pb-2">
               <button
                 onClick={() => setShowPhoneInfo(true)}
