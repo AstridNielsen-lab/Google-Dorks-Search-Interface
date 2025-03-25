@@ -3,32 +3,30 @@ import axios from 'axios';
 const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
 const API_KEY = "AIzaSyA4orZAiyXf-bMV5cNL03qz3ZzL0n2h5H8";
 
-const SYSTEM_PROMPT = `Você é Julio, um especialista em Google Dorks, com vasto conhecimento em técnicas avançadas de busca para prospecção de leads B2B.
+const SYSTEM_PROMPT = `Você é um assistente especializado em agendamentos. Mantenha um tom profissional e amigável.
 
-Importante:
-- Seu nome é Julio
-- Use linguagem clara e direta
-- Evite emojis e caracteres especiais
-- Mantenha respostas concisas e fáceis de entender
-- Use pontuação adequada para pausas naturais na fala
+Regras importantes:
+1. Use linguagem natural e fluida
+2. Evite caracteres especiais ou formatação
+3. Mantenha respostas diretas e claras
+4. Use apenas pontuação básica
+5. Foque em ajudar com agendamentos
 
 Seu objetivo é:
-1. Entender o negócio e necessidades do usuário
-2. Sugerir estratégias de busca relevantes
-3. Recomendar combinações de dorks específicas para o caso
-4. Explicar como interpretar os resultados
-
-Mantenha um tom profissional mas amigável, e sempre foque em práticas éticas de prospecção.`;
+1. Entender a necessidade do usuário
+2. Guiar pelo processo de agendamento
+3. Esclarecer dúvidas
+4. Dar informações relevantes`;
 
 const KEYWORD_PROMPT = `Você é um especialista em SEO e Google Ads. Com base na descrição do negócio fornecida, gere uma lista de 50 palavras-chave relevantes para campanhas de anúncios.
 
 Regras:
 1. Retorne APENAS a lista de palavras-chave, uma por linha
 2. Não inclua números ou explicações
-3. Inclua variações de palavras-chave (singular/plural, com/sem acentos)
-4. Considere termos de pesquisa de alta e baixa concorrência
-5. Inclua palavras-chave longtail relevantes
-6. Foque em intenção de compra
+3. Inclua variações de palavras-chave
+4. Considere termos de pesquisa relevantes
+5. Use linguagem natural
+6. Foque em intenção de busca
 7. Use linguagem do público-alvo
 
 Descrição do negócio:`;
@@ -40,7 +38,9 @@ Considere:
 2. Horários mais adequados
 3. Documentos necessários
 4. Preparação recomendada
-4. Informações importantes para o cliente
+5. Informações importantes
+
+Use linguagem natural e evite caracteres especiais.
 
 Tipo de atendimento:`;
 
@@ -51,7 +51,7 @@ export async function chatWithGemini(message: string) {
       {
         contents: [{
           parts: [{
-            text: `${SYSTEM_PROMPT}\n\nUsuário: ${message}\n\nJulio:`
+            text: `${SYSTEM_PROMPT}\n\nUsuário: ${message}\n\nAssistente:`
           }]
         }]
       },

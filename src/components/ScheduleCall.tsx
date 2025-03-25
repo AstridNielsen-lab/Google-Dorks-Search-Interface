@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Phone, Calendar, Clock, X, MessageSquare, AlertTriangle, Stethoscope, Scissors, Heart, Shield, UserCog, ShoppingCart, CreditCard } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Phone, Calendar, Clock, X, MessageSquare, AlertTriangle, Stethoscope, Scissors, Heart, Shield, UserCog, ShoppingCart, CreditCard, Mic, MicOff } from 'lucide-react';
 import { format, addDays, setHours, setMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { getSchedulingRecommendations } from '../services/gemini';
+import { getSchedulingRecommendations, chatWithGemini } from '../services/gemini';
 
 interface ScheduleCallProps {
   isOpen: boolean;
@@ -27,6 +27,12 @@ interface ServiceOption {
   icon: React.ReactNode;
   description: string;
   urgent: boolean;
+}
+
+interface ChatMessage {
+  id: string;
+  text: string;
+  isUser: boolean;
 }
 
 const serviceOptions: ServiceOption[] = [
@@ -98,6 +104,50 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedService, setSelectedService] = useState<ServiceType | null>(null);
   const [recommendations, setRecommendations] = useState<string>('');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const recognition = useRef<SpeechRecognition | null>(null);
+
+  useEffect(() => {
+    if (window.SpeechRecognition || (window as any).webkitSpeechRecognition) {
+      recognition.current = new ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)();
+      recognition.current.continuous = false;
+      recognition.current.interimResults = false;
+      recognition.current.lang = 'pt-BR';
+
+      recognition.current.onresult = (event: SpeechRecognitionEvent) => {
+        const transcript = event.results[0][0].transcript;
+        setInputMessage(transcript);
+        handleSendMessage(transcript);
+      };
+
+      recognition.current.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognition.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
+
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (selectedService) {
+      loadRecommendations();
+      const service = serviceOptions.find(opt => opt.id === selectedService);
+      if (service) {
+        addBotMessage(`Olá! Vou ajudar você com o agendamento para ${service.name}. Como posso auxiliar?`);
+      }
+    }
+  }, [selectedService]);
 
   useEffect(() => {
     // Load Google Calendar API
@@ -113,11 +163,59 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
     };
   }, []);
 
-  useEffect(() => {
-    if (selectedService) {
-      loadRecommendations();
+  const initClient = () => {
+    window.gapi.client.init({
+      apiKey: 'AIzaSyA4orZAiyXf-bMV5cNL03qz3ZzL0n2h5H8',
+      clientId: '576436264059-uvrrmedk2s5sc29frk7hs377ailql9t1.apps.googleusercontent.com',
+      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
+      scope: 'https://www.googleapis.com/auth/calendar.events'
+    });
+  };
+
+  const toggleListening = () => {
+    if (!recognition.current) return;
+
+    if (isListening) {
+      recognition.current.stop();
+    } else {
+      try {
+        recognition.current.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+      }
     }
-  }, [selectedService]);
+  };
+
+  const addBotMessage = async (text: string) => {
+    const newMessage: ChatMessage = {
+      id: Date.now().toString(),
+      text,
+      isUser: false
+    };
+    setMessages(prev => [...prev, newMessage]);
+  };
+
+  const handleSendMessage = async (text: string) => {
+    if (!text.trim()) return;
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      text: text.trim(),
+      isUser: true
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+
+    try {
+      const response = await chatWithGemini(text.trim());
+      addBotMessage(response);
+    } catch (error) {
+      console.error('Error getting bot response:', error);
+      addBotMessage('Desculpe, não consegui processar sua mensagem. Como posso ajudar de outra forma?');
+    }
+  };
 
   const loadRecommendations = async () => {
     if (!selectedService) return;
@@ -127,15 +225,6 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
 
     const recs = await getSchedulingRecommendations(service.name);
     setRecommendations(recs);
-  };
-
-  const initClient = () => {
-    window.gapi.client.init({
-      apiKey: 'AIzaSyA4orZAiyXf-bMV5cNL03qz3ZzL0n2h5H8',
-      clientId: '576436264059-uvrrmedk2s5sc29frk7hs377ailql9t1.apps.googleusercontent.com',
-      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
-      scope: 'https://www.googleapis.com/auth/calendar.events'
-    });
   };
 
   const availableTimes = [
@@ -303,11 +392,69 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                       </div>
                     </div>
                     <button
-                      onClick={() => setSelectedService(null)}
+                      onClick={() => {
+                        setSelectedService(null);
+                        setMessages([]);
+                      }}
                       className="text-gray-400 hover:text-gray-500"
                     >
                       <X className="w-5 h-5" />
                     </button>
+                  </div>
+
+                  {/* Chat Interface */}
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <div 
+                      ref={chatContainerRef}
+                      className="h-60 overflow-y-auto mb-4 space-y-4"
+                    >
+                      {messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-[80%] rounded-xl p-3 ${
+                              message.isUser
+                                ? 'bg-blue-100 text-blue-900'
+                                : 'bg-white border border-gray-200 text-gray-900'
+                            }`}
+                          >
+                            {message.text}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(inputMessage)}
+                        placeholder="Digite sua mensagem..."
+                        className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={toggleListening}
+                        className={`p-2 rounded-lg transition-colors ${
+                          isListening
+                            ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                            : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                        }`}
+                      >
+                        {isListening ? (
+                          <MicOff className="w-5 h-5" />
+                        ) : (
+                          <Mic className="w-5 h-5" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleSendMessage(inputMessage)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Enviar
+                      </button>
+                    </div>
                   </div>
 
                   {/* AI Recommendations */}
