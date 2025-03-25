@@ -290,24 +290,24 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
-      <div className="bg-white w-full min-h-screen sm:min-h-0 sm:rounded-2xl sm:shadow-xl sm:max-w-2xl sm:w-full sm:max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-4 sm:p-6 flex justify-between items-center">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 flex items-center gap-2">
-            <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+            <Phone className="w-6 h-6 text-blue-600" />
             Agendar Atendimento
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-500 p-2"
+            className="text-gray-400 hover:text-gray-500"
           >
-            <X className="w-5 h-5 sm:w-6 sm:h-6" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="p-6 space-y-6">
           {success ? (
-            <div className="text-center py-8">
+            <div className="text-center">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 {contactMethod === 'call' ? (
                   <Phone className="w-8 h-8 text-green-600" />
@@ -330,7 +330,7 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
             </div>
           ) : showChat ? (
             <div className="space-y-4">
-              <div className="h-[60vh] sm:h-96 overflow-y-auto p-4 bg-gray-50 rounded-lg">
+              <div className="h-96 overflow-y-auto p-4 bg-gray-50 rounded-lg">
                 {chatMessages.map((msg, index) => (
                   <div
                     key={index}
@@ -339,7 +339,7 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                     }`}
                   >
                     <div
-                      className={`inline-block p-3 rounded-lg max-w-[80%] ${
+                      className={`inline-block p-3 rounded-lg ${
                         msg.role === 'user'
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-200 text-gray-800'
@@ -407,7 +407,7 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Método de Contato
                   </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <button
                       onClick={() => setContactMethod('call')}
                       className={`p-3 rounded-lg flex items-center justify-center gap-2 transition-colors ${
@@ -461,7 +461,7 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                       />
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex gap-4">
                       <button
                         onClick={initiateContact}
                         disabled={!phoneNumber || !userName || !subject}
@@ -492,7 +492,7 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                         <Calendar className="w-4 h-4" />
                         Data
                       </label>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div className="grid grid-cols-4 gap-2">
                         {[0, 1, 2, 3].map((dayOffset) => {
                           const date = addDays(new Date(), dayOffset);
                           return (
@@ -522,7 +522,7 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                         <Clock className="w-4 h-4" />
                         Horário
                       </label>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <div className="grid grid-cols-3 gap-2">
                         {availableTimes.map((time) => (
                           <button
                             key={time}
