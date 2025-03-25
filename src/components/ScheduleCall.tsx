@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, Calendar, Clock, X, MessageSquare, Send, Bot } from 'lucide-react';
+import { Phone, Calendar, Clock, X, MessageSquare, Send, Bot, PhoneCall } from 'lucide-react';
 import { format, addDays, setHours, setMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import axios from 'axios';
@@ -16,29 +16,34 @@ const API_KEY = "AIzaSyA4orZAiyXf-bMV5cNL03qz3ZzL0n2h5H8";
 
 // Bot instructions for different interaction types
 const BOT_INSTRUCTIONS = {
-  call: `Você é um assistente de agendamento profissional. Ao atender uma ligação:
-1. Cumprimente cordialmente
-2. Confirme o nome e informações do cliente
-3. Discuta o assunto principal brevemente
-4. Sugira soluções iniciais
-5. Mantenha um tom profissional e prestativo
-6. Agende uma reunião de acompanhamento se necessário`,
+  call: `Você é um assistente de vendas profissional da Google Dorks Pro. Ao atender uma ligação:
+1. Cumprimente cordialmente usando o nome do cliente
+2. Mencione que está retornando o contato sobre o assunto específico informado
+3. Faça perguntas relevantes para entender melhor a necessidade
+4. Explique como o Google Dorks Pro pode ajudar neste caso específico
+5. Sugira uma demonstração prática da ferramenta
+6. Mantenha um tom profissional e prestativo
+7. Ofereça um desconto especial para fechamento imediato
+8. Agende uma reunião de acompanhamento se necessário`,
 
-  whatsapp: `Você é um assistente de WhatsApp profissional. Ao iniciar uma conversa:
-1. Envie uma mensagem de boas-vindas profissional
-2. Confirme as informações recebidas
-3. Faça perguntas relevantes sobre o assunto
-4. Ofereça informações preliminares
-5. Mantenha um tom amigável mas profissional
-6. Use emojis com moderação`,
+  whatsapp: `Você é um consultor de vendas do Google Dorks Pro no WhatsApp. Ao iniciar uma conversa:
+1. Envie uma mensagem personalizada usando o nome do cliente
+2. Mencione que está respondendo sobre o assunto específico informado
+3. Use emojis estrategicamente para tornar a conversa mais envolvente
+4. Faça perguntas para qualificar a necessidade
+5. Compartilhe casos de sucesso relevantes
+6. Ofereça uma demonstração ao vivo da ferramenta
+7. Apresente condições especiais para fechamento
+8. Mantenha um tom profissional mas amigável`,
 
-  immediate: `Você é um assistente imediato para Google Dorks Pro. Em cada interação:
-1. Cumprimente e identifique-se como assistente virtual
-2. Analise o assunto informado pelo usuário
-3. Forneça respostas diretas e relevantes
-4. Sugira estratégias de busca específicas
-5. Ofereça dicas práticas de uso da ferramenta
-6. Mantenha foco na solução do problema apresentado`
+  immediate: `Você é um especialista em Google Dorks Pro. Em cada interação:
+1. Cumprimente usando o nome do cliente
+2. Foque no assunto específico informado
+3. Forneça dicas práticas e personalizadas
+4. Sugira estratégias de busca específicas para o caso
+5. Compartilhe exemplos de uso bem-sucedidos
+6. Mantenha o foco na solução do problema apresentado
+7. Ofereça suporte adicional se necessário`
 };
 
 export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
@@ -95,18 +100,76 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
     setPhoneNumber(formatted);
   };
 
-  const initiateContact = () => {
+  const initiateContact = async () => {
+    if (!userName || !subject) {
+      setError('Por favor, preencha seu nome e o assunto.');
+      return;
+    }
+
     const cleanNumber = phoneNumber.replace(/\D/g, '');
     
     if (contactMethod === 'call') {
-      window.location.href = `tel:+55${cleanNumber}`;
+      // Prepare AI for call before initiating
+      try {
+        const response = await axios.post(
+          API_URL,
+          {
+            contents: [{
+              parts: [{
+                text: `${BOT_INSTRUCTIONS.call}\n\nPreparar atendimento para:\nCliente: ${userName}\nAssunto: ${subject}\n\nGere uma resposta inicial para começar o atendimento:`
+              }]
+            }]
+          },
+          {
+            params: { key: API_KEY },
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+
+        // Store the AI response for the call
+        localStorage.setItem('callScript', response.data.candidates[0].content.parts[0].text);
+        
+        // Initiate the call
+        window.location.href = `tel:+55${cleanNumber}`;
+      } catch (error) {
+        console.error('Error preparing call:', error);
+        setError('Erro ao preparar o atendimento. Por favor, tente novamente.');
+        return;
+      }
     } else if (contactMethod === 'whatsapp') {
-      const message = `Olá! Meu nome é ${userName}. Assunto: ${subject}`;
-      window.location.href = `https://wa.me/55${cleanNumber}?text=${encodeURIComponent(message)}`;
+      try {
+        // Prepare AI response for WhatsApp
+        const response = await axios.post(
+          API_URL,
+          {
+            contents: [{
+              parts: [{
+                text: `${BOT_INSTRUCTIONS.whatsapp}\n\nPreparar mensagem inicial para:\nCliente: ${userName}\nAssunto: ${subject}\n\nGere uma mensagem de WhatsApp inicial:`
+              }]
+            }]
+          },
+          {
+            params: { key: API_KEY },
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+
+        const initialMessage = response.data.candidates[0].content.parts[0].text;
+        window.location.href = `https://wa.me/55${cleanNumber}?text=${encodeURIComponent(initialMessage)}`;
+      } catch (error) {
+        console.error('Error preparing WhatsApp message:', error);
+        setError('Erro ao preparar a mensagem. Por favor, tente novamente.');
+        return;
+      }
     } else if (contactMethod === 'immediate') {
       setShowChat(true);
       handleImmediateChat();
     }
+
+    setSuccess(true);
+    setTimeout(() => {
+      setSuccess(false);
+    }, 3000);
   };
 
   const handleImmediateChat = async () => {
@@ -177,8 +240,6 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
       });
 
       setSuccess(true);
-      initiateContact();
-      
       setTimeout(() => {
         onClose();
         setSuccess(false);
@@ -222,7 +283,7 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                 )}
               </div>
               <h3 className="text-lg font-medium text-green-900">
-                {contactMethod === 'immediate' ? 'Chat iniciado!' : 'Agendamento Confirmado!'}
+                {contactMethod === 'immediate' ? 'Chat iniciado!' : 'Iniciando contato!'}
               </h3>
               <p className="mt-2 text-sm text-green-600">
                 {contactMethod === 'call' 
@@ -366,6 +427,32 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                       />
                     </div>
 
+                    <div className="flex gap-4">
+                      <button
+                        onClick={initiateContact}
+                        disabled={!phoneNumber || !userName || !subject}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                      >
+                        {contactMethod === 'call' ? (
+                          <PhoneCall className="w-5 h-5" />
+                        ) : (
+                          <MessageSquare className="w-5 h-5" />
+                        )}
+                        <span>Contatar Agora</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedDate(new Date());
+                          setSelectedTime('09:00');
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Calendar className="w-5 h-5" />
+                        <span>Agendar</span>
+                      </button>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
@@ -453,11 +540,7 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                       </>
                     ) : (
                       <>
-                        {contactMethod === 'call' ? (
-                          <Phone className="w-5 h-5" />
-                        ) : (
-                          <MessageSquare className="w-5 h-5" />
-                        )}
+                        <Calendar className="w-5 h-5" />
                         <span>Confirmar Agendamento</span>
                       </>
                     )}
