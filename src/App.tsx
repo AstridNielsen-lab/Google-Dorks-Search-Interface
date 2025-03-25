@@ -228,26 +228,6 @@ function App() {
                 <Scale className="w-5 h-5 mr-2" />
                 <span>Direitos Autorais</span>
               </button>
-
-
-            <div className="flex flex-wrap items-center gap-3 pb-2">
-              <button
-                onClick={() => setShowScheduleCall(true)}
-                className="inline-flex items-center px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
-              >
-                <Phone className="w-5 h-5 mr-2" />
-                <span>Agendar Atendimento</span>
-              </button>
-              <a
-                href="https://ads.google.com/aw/campaigns/new/express"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
-              >
-                <Target className="w-5 h-5 mr-2" />
-                <span>Google Ads</span>
-              </a>
-
               <button
                 onClick={() => setShowHelp(true)}
                 className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
