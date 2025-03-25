@@ -605,3 +605,5 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
     </div>
   );
 }
+
+export { ScheduleCall }
