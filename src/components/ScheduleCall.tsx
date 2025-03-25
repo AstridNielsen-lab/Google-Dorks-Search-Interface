@@ -3,6 +3,7 @@ import { Phone, Calendar, Clock, X, MessageSquare, Send, Bot, PhoneCall } from '
 import { format, addDays, setHours, setMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import axios from 'axios';
+import { whatsAppManager } from '../services/notifications';
 
 interface ScheduleCallProps {
   isOpen: boolean;
@@ -14,7 +15,6 @@ type ContactMethod = 'call' | 'whatsapp' | 'immediate';
 const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
 const API_KEY = "AIzaSyA4orZAiyXf-bMV5cNL03qz3ZzL0n2h5H8";
 
-// Bot instructions for different interaction types
 const BOT_INSTRUCTIONS = {
   call: `Você é um assistente de vendas profissional da Google Dorks Pro. Ao atender uma ligação:
 1. Cumprimente cordialmente usando o nome do cliente
@@ -59,9 +59,56 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
   const [chatMessages, setChatMessages] = useState<Array<{ role: string; content: string }>>([]);
   const [userMessage, setUserMessage] = useState('');
   const [showChat, setShowChat] = useState(false);
+  const [whatsAppConversation, setWhatsAppConversation] = useState<Array<{ text: string; isFromUser: boolean }>>([]);
 
   useEffect(() => {
-    // Load Google Calendar API
+    if (contactMethod === 'whatsapp') {
+      const unsubscribe = whatsAppManager.onMessage(message => {
+        setWhatsAppConversation(prev => [...prev, { text: message.text, isFromUser: message.isFromUser }]);
+        
+        handleWhatsAppResponse(message.text);
+      });
+
+      return () => unsubscribe();
+    }
+  }, [contactMethod]);
+
+  const handleWhatsAppResponse = async (userMessage: string) => {
+    const positivePatterns = [
+      /obrigado/i,
+      /resolvido/i,
+      /ajudou/i,
+      /consegui/i,
+      /funcionou/i,
+      /ok/i,
+      /beleza/i
+    ];
+
+    const isPositive = positivePatterns.some(pattern => pattern.test(userMessage));
+
+    if (isPositive) {
+      const response = "Fico feliz em ter ajudado! Se precisar de mais alguma coisa, estou à disposição. Tenha um ótimo dia! 😊";
+      await whatsAppManager.sendMessage(response);
+      return;
+    }
+
+    try {
+      const response = await chatWithGemini(
+        `${BOT_INSTRUCTIONS.whatsapp}\n\nHistórico da conversa:\n${whatsAppConversation
+          .map(msg => `${msg.isFromUser ? 'Cliente' : 'Bot'}: ${msg.text}`)
+          .join('\n')}\n\nÚltima mensagem do cliente: ${userMessage}\n\nGere uma resposta apropriada:`
+      );
+
+      await whatsAppManager.sendMessage(response);
+    } catch (error) {
+      console.error('Error generating response:', error);
+      await whatsAppManager.sendMessage(
+        "Desculpe, tive um problema ao processar sua mensagem. Pode reformular de outra forma?"
+      );
+    }
+  };
+
+  useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://apis.google.com/js/api.js';
     script.onload = () => {
@@ -108,8 +155,23 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
 
     const cleanNumber = phoneNumber.replace(/\D/g, '');
     
-    if (contactMethod === 'call') {
-      // Prepare AI for call before initiating
+    if (contactMethod === 'whatsapp') {
+      try {
+        const response = await chatWithGemini(
+          `${BOT_INSTRUCTIONS.whatsapp}\n\nPreparar mensagem inicial para:\nCliente: ${userName}\nAssunto: ${subject}\n\nGere uma mensagem de WhatsApp inicial:`
+        );
+
+        setWhatsAppConversation([{ text: response, isFromUser: false }]);
+        
+        await whatsAppManager.sendMessage(response);
+        
+        window.location.href = `https://wa.me/55${cleanNumber}?text=${encodeURIComponent(response)}`;
+      } catch (error) {
+        console.error('Error preparing WhatsApp message:', error);
+        setError('Erro ao preparar a mensagem. Por favor, tente novamente.');
+        return;
+      }
+    } else if (contactMethod === 'call') {
       try {
         const response = await axios.post(
           API_URL,
@@ -126,39 +188,12 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
           }
         );
 
-        // Store the AI response for the call
         localStorage.setItem('callScript', response.data.candidates[0].content.parts[0].text);
         
-        // Initiate the call
         window.location.href = `tel:+55${cleanNumber}`;
       } catch (error) {
         console.error('Error preparing call:', error);
         setError('Erro ao preparar o atendimento. Por favor, tente novamente.');
-        return;
-      }
-    } else if (contactMethod === 'whatsapp') {
-      try {
-        // Prepare AI response for WhatsApp
-        const response = await axios.post(
-          API_URL,
-          {
-            contents: [{
-              parts: [{
-                text: `${BOT_INSTRUCTIONS.whatsapp}\n\nPreparar mensagem inicial para:\nCliente: ${userName}\nAssunto: ${subject}\n\nGere uma mensagem de WhatsApp inicial:`
-              }]
-            }]
-          },
-          {
-            params: { key: API_KEY },
-            headers: { 'Content-Type': 'application/json' }
-          }
-        );
-
-        const initialMessage = response.data.candidates[0].content.parts[0].text;
-        window.location.href = `https://wa.me/55${cleanNumber}?text=${encodeURIComponent(initialMessage)}`;
-      } catch (error) {
-        console.error('Error preparing WhatsApp message:', error);
-        setError('Erro ao preparar a mensagem. Por favor, tente novamente.');
         return;
       }
     } else if (contactMethod === 'immediate') {
@@ -340,7 +375,6 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
           ) : (
             <>
               <div className="space-y-4">
-                {/* User Information */}
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
