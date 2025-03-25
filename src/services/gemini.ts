@@ -33,6 +33,17 @@ Regras:
 
 Descrição do negócio:`;
 
+const SCHEDULE_PROMPT = `Você é um assistente especializado em agendamentos. Analise o tipo de atendimento solicitado e forneça recomendações específicas.
+
+Considere:
+1. Urgência do atendimento
+2. Horários mais adequados
+3. Documentos necessários
+4. Preparação recomendada
+4. Informações importantes para o cliente
+
+Tipo de atendimento:`;
+
 export async function chatWithGemini(message: string) {
   try {
     const response = await axios.post(
@@ -87,5 +98,33 @@ export async function generateKeywords(businessDescription: string): Promise<str
   } catch (error) {
     console.error('Error generating keywords:', error);
     return [];
+  }
+}
+
+export async function getSchedulingRecommendations(serviceType: string): Promise<string> {
+  try {
+    const response = await axios.post(
+      API_URL,
+      {
+        contents: [{
+          parts: [{
+            text: `${SCHEDULE_PROMPT}\n\n${serviceType}`
+          }]
+        }]
+      },
+      {
+        params: {
+          key: API_KEY
+        },
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    return response.data.candidates[0].content.parts[0].text;
+  } catch (error) {
+    console.error('Error getting scheduling recommendations:', error);
+    return 'Não foi possível obter recomendações no momento. Por favor, continue com o agendamento.';
   }
 }
