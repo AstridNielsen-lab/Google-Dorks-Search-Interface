@@ -9,7 +9,6 @@ import { KeywordGeneratorModal } from './components/KeywordGeneratorModal';
 import { UserRegistration } from './components/UserRegistration';
 import { UserInfo } from './components/UserInfo';
 import { CopyrightModal } from './components/CopyrightModal';
-import { ScheduleCall } from './components/ScheduleCall';
 import { googleDorks } from './dorks';
 import { Message, UserData } from './types';
 import { saveSearch, getSearchHistory, SearchHistory, getUserData } from './services/storage';
@@ -33,7 +32,6 @@ function App() {
   const [showCopyright, setShowCopyright] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [checkingSubscription, setCheckingSubscription] = useState(true);
-  const [showScheduleCall, setShowScheduleCall] = useState(false);
 
   useEffect(() => {
     const checkUserSubscription = async () => {
@@ -173,12 +171,21 @@ function App() {
 
             <div className="flex flex-wrap items-center gap-3 pb-2">
               <button
-                onClick={() => setShowScheduleCall(true)}
+                onClick={() => setShowPhoneInfo(true)}
                 className="inline-flex items-center px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
               >
                 <Phone className="w-5 h-5 mr-2" />
-                <span>Agendar Atendimento</span>
+                <span>Falar com Robô</span>
               </button>
+               <a
+                href="https://start.me/p/6rOGjm/osint"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+              >
+                <Database className="w-5 h-5 mr-2" />
+                <span>KeyboardKomando</span>
+              </a>
               <a
                 href="https://ads.google.com/aw/campaigns/new/express"
                 target="_blank"
@@ -206,6 +213,7 @@ function App() {
                 <Database className="w-5 h-5 mr-2" />
                 <span>GHDB - OSINT</span>
               </a>
+             
               <button
                 onClick={() => setShowKeywordGenerator(true)}
                 className="inline-flex items-center px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors"
@@ -220,6 +228,26 @@ function App() {
                 <Scale className="w-5 h-5 mr-2" />
                 <span>Direitos Autorais</span>
               </button>
+
+
+            <div className="flex flex-wrap items-center gap-3 pb-2">
+              <button
+                onClick={() => setShowScheduleCall(true)}
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
+              >
+                <Phone className="w-5 h-5 mr-2" />
+                <span>Agendar Atendimento</span>
+              </button>
+              <a
+                href="https://ads.google.com/aw/campaigns/new/express"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+              >
+                <Target className="w-5 h-5 mr-2" />
+                <span>Google Ads</span>
+              </a>
+
               <button
                 onClick={() => setShowHelp(true)}
                 className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
@@ -434,10 +462,6 @@ function App() {
       <CopyrightModal
         isOpen={showCopyright}
         onClose={() => setShowCopyright(false)}
-      />
-      <ScheduleCall
-        isOpen={showScheduleCall}
-        onClose={() => setShowScheduleCall(false)}
       />
     </div>
   );
