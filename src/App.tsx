@@ -16,10 +16,8 @@ import { saveSearch, getSearchHistory, SearchHistory, getUserData } from './serv
 import { checkSubscription } from './services/mercadopago';
 import ReactMarkdown from 'react-markdown';
 import { DatabaseDorks } from './components/DatabaseDorks';
-import { PermissionsConsent } from './components/PermissionsConsent';
 
 function App() {
-  const [permissionsGranted, setPermissionsGranted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedDorks, setSelectedDorks] = useState<string[]>([]);
@@ -36,10 +34,6 @@ function App() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [checkingSubscription, setCheckingSubscription] = useState(true);
   const [showScheduleCall, setShowScheduleCall] = useState(false);
-
-  if (!permissionsGranted && !localStorage.getItem('permissions-granted')) {
-    return <PermissionsConsent onGranted={() => setPermissionsGranted(true)} />;
-  }
 
   useEffect(() => {
     const checkUserSubscription = async () => {
