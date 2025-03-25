@@ -1,14 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, Calendar, Clock, X, MessageSquare } from 'lucide-react';
+import { Phone, Calendar, Clock, X, MessageSquare, Send, Bot } from 'lucide-react';
 import { format, addDays, setHours, setMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import axios from 'axios';
 
 interface ScheduleCallProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type ContactMethod = 'call' | 'whatsapp';
+type ContactMethod = 'call' | 'whatsapp' | 'immediate';
+
+const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
+const API_KEY = "AIzaSyA4orZAiyXf-bMV5cNL03qz3ZzL0n2h5H8";
+
+// Bot instructions for different interaction types
+const BOT_INSTRUCTIONS = {
+  call: `Você é um assistente de agendamento profissional. Ao atender uma ligação:
+1. Cumprimente cordialmente
+2. Confirme o nome e informações do cliente
+3. Discuta o assunto principal brevemente
+4. Sugira soluções iniciais
+5. Mantenha um tom profissional e prestativo
+6. Agende uma reunião de acompanhamento se necessário`,
+
+  whatsapp: `Você é um assistente de WhatsApp profissional. Ao iniciar uma conversa:
+1. Envie uma mensagem de boas-vindas profissional
+2. Confirme as informações recebidas
+3. Faça perguntas relevantes sobre o assunto
+4. Ofereça informações preliminares
+5. Mantenha um tom amigável mas profissional
+6. Use emojis com moderação`,
+
+  immediate: `Você é um assistente imediato para Google Dorks Pro. Em cada interação:
+1. Cumprimente e identifique-se como assistente virtual
+2. Analise o assunto informado pelo usuário
+3. Forneça respostas diretas e relevantes
+4. Sugira estratégias de busca específicas
+5. Ofereça dicas práticas de uso da ferramenta
+6. Mantenha foco na solução do problema apresentado`
+};
 
 export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -18,6 +49,11 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userName, setUserName] = useState('');
+  const [subject, setSubject] = useState('');
+  const [chatMessages, setChatMessages] = useState<Array<{ role: string; content: string }>>([]);
+  const [userMessage, setUserMessage] = useState('');
+  const [showChat, setShowChat] = useState(false);
 
   useEffect(() => {
     // Load Google Calendar API
@@ -64,13 +100,53 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
     
     if (contactMethod === 'call') {
       window.location.href = `tel:+55${cleanNumber}`;
-    } else {
-      window.location.href = `https://wa.me/55${cleanNumber}?text=Olá! Seu agendamento para ${format(selectedDate, 'dd/MM/yyyy')} às ${selectedTime} foi confirmado.`;
+    } else if (contactMethod === 'whatsapp') {
+      const message = `Olá! Meu nome é ${userName}. Assunto: ${subject}`;
+      window.location.href = `https://wa.me/55${cleanNumber}?text=${encodeURIComponent(message)}`;
+    } else if (contactMethod === 'immediate') {
+      setShowChat(true);
+      handleImmediateChat();
+    }
+  };
+
+  const handleImmediateChat = async () => {
+    if (!userMessage.trim()) return;
+
+    setChatMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setUserMessage('');
+    setLoading(true);
+
+    try {
+      const response = await axios.post(
+        API_URL,
+        {
+          contents: [{
+            parts: [{
+              text: `${BOT_INSTRUCTIONS[contactMethod]}\n\nUsuário (${userName}): ${userMessage}\nAssunto: ${subject}\n\nAssistente:`
+            }]
+          }]
+        },
+        {
+          params: { key: API_KEY },
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+
+      const botResponse = response.data.candidates[0].content.parts[0].text;
+      setChatMessages(prev => [...prev, { role: 'assistant', content: botResponse }]);
+    } catch (error) {
+      console.error('Error in chat:', error);
+      setChatMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Desculpe, ocorreu um erro. Por favor, tente novamente.'
+      }]);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSchedule = async () => {
-    if (!selectedDate || !selectedTime || !phoneNumber) return;
+    if (!selectedDate || !selectedTime || !phoneNumber || !userName || !subject) return;
 
     setLoading(true);
     setError(null);
@@ -80,11 +156,11 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
 
       const [hours, minutes] = selectedTime.split(':');
       const startTime = setMinutes(setHours(selectedDate, parseInt(hours)), parseInt(minutes));
-      const endTime = new Date(startTime.getTime() + 30 * 60000); // 30 minutes duration
+      const endTime = new Date(startTime.getTime() + 30 * 60000);
 
       const event = {
-        summary: 'Atendimento Google Dorks Pro',
-        description: `Atendimento via ${contactMethod === 'call' ? 'ligação' : 'WhatsApp'}\nTelefone: ${phoneNumber}`,
+        summary: `Atendimento Google Dorks Pro - ${userName}`,
+        description: `Atendimento via ${contactMethod === 'call' ? 'ligação' : 'WhatsApp'}\nTelefone: ${phoneNumber}\nAssunto: ${subject}`,
         start: {
           dateTime: startTime.toISOString(),
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -119,7 +195,7 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
+      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
             <Phone className="w-6 h-6 text-blue-600" />
@@ -139,25 +215,104 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 {contactMethod === 'call' ? (
                   <Phone className="w-8 h-8 text-green-600" />
-                ) : (
+                ) : contactMethod === 'whatsapp' ? (
                   <MessageSquare className="w-8 h-8 text-green-600" />
+                ) : (
+                  <Bot className="w-8 h-8 text-green-600" />
                 )}
               </div>
-              <h3 className="text-lg font-medium text-green-900">Agendamento Confirmado!</h3>
+              <h3 className="text-lg font-medium text-green-900">
+                {contactMethod === 'immediate' ? 'Chat iniciado!' : 'Agendamento Confirmado!'}
+              </h3>
               <p className="mt-2 text-sm text-green-600">
                 {contactMethod === 'call' 
                   ? 'Iniciando chamada...'
-                  : 'Abrindo WhatsApp...'}
+                  : contactMethod === 'whatsapp'
+                  ? 'Abrindo WhatsApp...'
+                  : 'Conectando ao assistente...'}
               </p>
+            </div>
+          ) : showChat ? (
+            <div className="space-y-4">
+              <div className="h-96 overflow-y-auto p-4 bg-gray-50 rounded-lg">
+                {chatMessages.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={`mb-4 ${
+                      msg.role === 'user' ? 'text-right' : 'text-left'
+                    }`}
+                  >
+                    <div
+                      className={`inline-block p-3 rounded-lg ${
+                        msg.role === 'user'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-800'
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                {loading && (
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent mx-auto"></div>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={userMessage}
+                  onChange={(e) => setUserMessage(e.target.value)}
+                  placeholder="Digite sua mensagem..."
+                  className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                  onClick={handleImmediateChat}
+                  disabled={loading || !userMessage.trim()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  <Send className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           ) : (
             <>
               <div className="space-y-4">
+                {/* User Information */}
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                      Seu Nome
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      value={userName}
+                      onChange={(e) => setUserName(e.target.value)}
+                      placeholder="Digite seu nome completo"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                      Assunto
+                    </label>
+                    <textarea
+                      id="subject"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      placeholder="Descreva brevemente o assunto que deseja tratar"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none h-24"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Método de Contato
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <button
                       onClick={() => setContactMethod('call')}
                       className={`p-3 rounded-lg flex items-center justify-center gap-2 transition-colors ${
@@ -180,75 +335,90 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                       <MessageSquare className="w-5 h-5" />
                       <span>WhatsApp</span>
                     </button>
+                    <button
+                      onClick={() => setContactMethod('immediate')}
+                      className={`p-3 rounded-lg flex items-center justify-center gap-2 transition-colors ${
+                        contactMethod === 'immediate'
+                          ? 'bg-purple-100 text-purple-700 border-2 border-purple-500'
+                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Bot className="w-5 h-5" />
+                      <span>Imediato</span>
+                    </button>
                   </div>
                 </div>
 
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Telefone
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    value={phoneNumber}
-                    onChange={handlePhoneChange}
-                    placeholder="(11) 99999-9999"
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    maxLength={15}
-                  />
-                </div>
+                {contactMethod !== 'immediate' && (
+                  <>
+                    <div>
+                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                        Telefone
+                      </label>
+                      <input
+                        type="tel"
+                        id="phone"
+                        value={phoneNumber}
+                        onChange={handlePhoneChange}
+                        placeholder="(11) 99999-9999"
+                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        maxLength={15}
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Data
-                  </label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[0, 1, 2, 3].map((dayOffset) => {
-                      const date = addDays(new Date(), dayOffset);
-                      return (
-                        <button
-                          key={dayOffset}
-                          onClick={() => setSelectedDate(date)}
-                          className={`p-3 rounded-lg text-center transition-colors ${
-                            format(selectedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-                              ? 'bg-blue-100 text-blue-700 border-2 border-blue-500'
-                              : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                          }`}
-                        >
-                          <div className="text-xs uppercase">
-                            {format(date, 'EEE', { locale: ptBR })}
-                          </div>
-                          <div className="font-semibold">
-                            {format(date, 'd')}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        Data
+                      </label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[0, 1, 2, 3].map((dayOffset) => {
+                          const date = addDays(new Date(), dayOffset);
+                          return (
+                            <button
+                              key={dayOffset}
+                              onClick={() => setSelectedDate(date)}
+                              className={`p-3 rounded-lg text-center transition-colors ${
+                                format(selectedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+                                  ? 'bg-blue-100 text-blue-700 border-2 border-blue-500'
+                                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                              }`}
+                            >
+                              <div className="text-xs uppercase">
+                                {format(date, 'EEE', { locale: ptBR })}
+                              </div>
+                              <div className="font-semibold">
+                                {format(date, 'd')}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Horário
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {availableTimes.map((time) => (
-                      <button
-                        key={time}
-                        onClick={() => setSelectedTime(time)}
-                        className={`p-2 rounded-lg text-center transition-colors ${
-                          selectedTime === time
-                            ? 'bg-blue-100 text-blue-700 border-2 border-blue-500'
-                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        {time}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        Horário
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {availableTimes.map((time) => (
+                          <button
+                            key={time}
+                            onClick={() => setSelectedTime(time)}
+                            className={`p-2 rounded-lg text-center transition-colors ${
+                              selectedTime === time
+                                ? 'bg-blue-100 text-blue-700 border-2 border-blue-500'
+                                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            {time}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {error && (
@@ -257,27 +427,43 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                 </div>
               )}
 
-              <button
-                onClick={handleSchedule}
-                disabled={!selectedDate || !selectedTime || !phoneNumber || loading}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                    <span>Agendando...</span>
-                  </>
+              <div className="flex gap-2">
+                {contactMethod === 'immediate' ? (
+                  <button
+                    onClick={() => {
+                      setShowChat(true);
+                      initiateContact();
+                    }}
+                    disabled={!userName || !subject}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Bot className="w-5 h-5" />
+                    <span>Iniciar Chat Imediato</span>
+                  </button>
                 ) : (
-                  <>
-                    {contactMethod === 'call' ? (
-                      <Phone className="w-5 h-5" />
+                  <button
+                    onClick={handleSchedule}
+                    disabled={!selectedDate || !selectedTime || !phoneNumber || !userName || !subject || loading}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                        <span>Agendando...</span>
+                      </>
                     ) : (
-                      <MessageSquare className="w-5 h-5" />
+                      <>
+                        {contactMethod === 'call' ? (
+                          <Phone className="w-5 h-5" />
+                        ) : (
+                          <MessageSquare className="w-5 h-5" />
+                        )}
+                        <span>Confirmar Agendamento</span>
+                      </>
                     )}
-                    <span>Confirmar Agendamento</span>
-                  </>
+                  </button>
                 )}
-              </button>
+              </div>
             </>
           )}
         </div>
