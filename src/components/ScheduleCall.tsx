@@ -32,7 +32,7 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
   const initClient = () => {
     window.gapi.client.init({
       apiKey: 'AIzaSyA4orZAiyXf-bMV5cNL03qz3ZzL0n2h5H8',
-      clientId: '29008060-app.apps.googleusercontent.com',
+      clientId: '576436264059-uvrrmedk2s5sc29frk7hs377ailql9t1.apps.googleusercontent.com',
       discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
       scope: 'https://www.googleapis.com/auth/calendar.events'
     });
