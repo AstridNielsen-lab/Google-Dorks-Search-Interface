@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Search, ExternalLink, Sparkles, HelpCircle, Wand2, Target, Phone, X, Scale, Database } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Search, Filter, ExternalLink, Sparkles, HelpCircle, Wand2, Target, Phone, X, Facebook, Scale, Database } from 'lucide-react';
 import { DorkSelector } from './components/DorkSelector';
 import { Footer } from './components/Footer';
 import { SplashScreen } from './components/SplashScreen';
@@ -9,9 +9,10 @@ import { KeywordGeneratorModal } from './components/KeywordGeneratorModal';
 import { UserRegistration } from './components/UserRegistration';
 import { UserInfo } from './components/UserInfo';
 import { CopyrightModal } from './components/CopyrightModal';
+import { ScheduleCall } from './components/ScheduleCall';
 import { googleDorks } from './dorks';
 import { Message, UserData } from './types';
-import { saveSearch, getSearchHistory, SearchHistory, getUserData, saveUserData } from './services/storage';
+import { saveSearch, getSearchHistory, SearchHistory, getUserData } from './services/storage';
 import { checkSubscription } from './services/mercadopago';
 import ReactMarkdown from 'react-markdown';
 import { DatabaseDorks } from './components/DatabaseDorks';
@@ -32,6 +33,7 @@ function App() {
   const [showCopyright, setShowCopyright] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [checkingSubscription, setCheckingSubscription] = useState(true);
+  const [showScheduleCall, setShowScheduleCall] = useState(false);
 
   useEffect(() => {
     const checkUserSubscription = async () => {
@@ -149,14 +151,12 @@ function App() {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
-  const [showScheduleCall, setShowScheduleCall] = useState(false);
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
       <UserInfo userData={userData} isSubscribed={isSubscribed} />
       
       <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8"></div>
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex flex-col space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -170,8 +170,6 @@ function App() {
                 <span className="text-sm font-medium text-gray-600">Like Look Solutions</span>
               </div>
             </div>
-
-{/* Botão "Agendar Atendimento" adicionado abaixo */}
 
             <div className="flex flex-wrap items-center gap-3 pb-2">
               <button
@@ -190,43 +188,13 @@ function App() {
                 <Target className="w-5 h-5 mr-2" />
                 <span>Google Ads</span>
               </a>
-
-
-              {/* Novo botão adicionado aqui final do meu codigo */}
-
-            <div className="flex flex-wrap items-center gap-3 pb-2">
-              <button
-                onClick={() => setShowPhoneInfo(true)}
-                className="inline-flex items-center px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
-              >
-                <Phone className="w-5 h-5 mr-2" />
-                <span>Falar com Robô</span>
-              </button>
-               <a
-                href="https://start.me/p/6rOGjm/osint"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors"
-              >
-                <Database className="w-5 h-5 mr-2" />
-                <span>KeyboardKomando</span>
-              </a>
-              <a
-                href="https://ads.google.com/aw/campaigns/new/express"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
-              >
-                <Target className="w-5 h-5 mr-2" />
-                <span>Google Ads</span>
-              </a>
               <a
                 href="https://www.facebook.com/business/tools/ads-manager"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
               >
-                <ExternalLink className="w-5 h-5 mr-2" />
+                <Facebook className="w-5 h-5 mr-2" />
                 <span>Facebook Ads</span>
               </a>
               <a
@@ -238,7 +206,6 @@ function App() {
                 <Database className="w-5 h-5 mr-2" />
                 <span>GHDB - OSINT</span>
               </a>
-             
               <button
                 onClick={() => setShowKeywordGenerator(true)}
                 className="inline-flex items-center px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors"
@@ -278,7 +245,7 @@ function App() {
                     placeholder="Descreva seu negócio e que tipo de leads você procura..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   />
                   <div className="absolute inset-y-0 right-0 flex py-1.5 pr-1.5">
                     <button
@@ -467,6 +434,10 @@ function App() {
       <CopyrightModal
         isOpen={showCopyright}
         onClose={() => setShowCopyright(false)}
+      />
+      <ScheduleCall
+        isOpen={showScheduleCall}
+        onClose={() => setShowScheduleCall(false)}
       />
     </div>
   );

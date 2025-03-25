@@ -1,59 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Phone, Calendar, Clock, X } from 'lucide-react';
 import { format, addDays, setHours, setMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-interface GoogleCalendarEvent {
-  calendarId?: string;
-  resource?: {
-    summary: string;
-    description: string;
-    start: {
-      dateTime: string;
-      timeZone: string;
-    };
-    end: {
-      dateTime: string;
-      timeZone: string;
-    };
-  };
-}
-
-interface GoogleCalendarResponse {
-  result: {
-    id: string;
-    status: string;
-    htmlLink: string;
-  };
-}
-
-type GapiClientConfig = {
-  apiKey: string;
-  clientId: string;
-  discoveryDocs: string[];
-  scope: string;
-};
-
-declare global {
-  interface Window {
-    gapi: {
-      load: (api: string, callback: () => void) => void;
-      client: {
-        init: (config: GapiClientConfig) => Promise<void>;
-        calendar: {
-          events: {
-            insert: (params: GoogleCalendarEvent) => Promise<GoogleCalendarResponse>;
-          };
-        };
-      };
-      auth2: {
-        getAuthInstance: () => {
-          signIn: () => Promise<void>;
-        };
-      };
-    };
-  }
-}
 
 interface ScheduleCallProps {
   isOpen: boolean;
@@ -105,26 +53,26 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
       await window.gapi.auth2.getAuthInstance().signIn();
 
       const [hours, minutes] = selectedTime.split(':');
-      const startDate = setMinutes(setHours(selectedDate, parseInt(hours)), parseInt(minutes));
-      const endDate = addDays(startDate, 1); // 1 hour duration
+      const startTime = setMinutes(setHours(selectedDate, parseInt(hours)), parseInt(minutes));
+      const endTime = new Date(startTime.getTime() + 30 * 60000); // 30 minutes duration
 
-      const eventData: GoogleCalendarEvent = {
-        calendarId: 'primary',
-        resource: {
-          summary: 'Atendimento Google Dorks Pro',
-          description: 'Atendimento automatizado via Google Dorks Pro',
-          start: {
-            dateTime: startDate.toISOString(),
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-          },
-          end: {
-            dateTime: endDate.toISOString(),
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-          }
+      const event = {
+        summary: 'Atendimento Google Dorks Pro',
+        description: 'Atendimento automatizado via Google Dorks Pro',
+        start: {
+          dateTime: startTime.toISOString(),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        },
+        end: {
+          dateTime: endTime.toISOString(),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
         }
       };
 
-      await window.gapi.client.calendar.events.insert(eventData);
+      await window.gapi.client.calendar.events.insert({
+        calendarId: 'primary',
+        resource: event
+      });
 
       setSuccess(true);
       setTimeout(() => {
@@ -190,7 +138,7 @@ export function ScheduleCall({ isOpen, onClose }: ScheduleCallProps) {
                           }`}
                         >
                           <div className="text-xs uppercase">
-                            {format(date, 'EEE', ptBR)}
+                            {format(date, 'EEE', { locale: ptBR })}
                           </div>
                           <div className="font-semibold">
                             {format(date, 'd')}
